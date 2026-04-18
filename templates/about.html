@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block schema %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "AboutPage",
+  "name": "About {{ SITE_NAME }}",
+  "description": {{ page_desc | tojson }},
+  "url": "{{ SITE_URL }}{{ canonical }}",
+  "inLanguage": "{{ LANG_TAG }}",
+  "isPartOf": { "@id": "{{ SITE_URL }}/#website" },
+  "mainEntity": { "@id": "{{ SITE_URL }}/#organization" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How do I verify my MLBB account with SGS?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "After joining the SGS Telegram group, follow the pinned verification message. The process takes under a minute — you screenshot your in-game profile and send it to the verification bot. Verified members only policy keeps scrims smurf-free."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is SGS only for Mythic-rank players?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. SGS has daily lobbies from Epic through Mythic Glory — any serious Singapore player is welcome. We also run coaching sessions where higher-rank members help climbers improve."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does SGS cost anything to join?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. SGS is completely free. We run on community goodwill, occasional tournament sponsorships, and the belief that local scenes grow faster when they stay open."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is SGS affiliated with Moonton?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. SGS is an independent community-run group. Hero data on this site comes from the OpenMLBB community API. We are not affiliated with, endorsed by, or sponsored by Moonton."
+      }
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "{{ SITE_URL }}/" },
+    { "@type": "ListItem", "position": 2, "name": "About", "item": "{{ SITE_URL }}{{ canonical }}" }
+  ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <h1>About Singapore Gaming Syndicate</h1>
+  <p>Singapore's biggest verified Mobile Legends community &mdash; built for players who take the grind seriously.</p>
+</section>
+
+<section class="panel">
+  <h2>What is SGS?</h2>
+  <p>SGS is a members-only Telegram community for Singapore-based MLBB players. It's where scrim teams are formed, rank partners are found, and strategies get shared. We were founded by local Mythic-rank players who were tired of solo-queueing into feeders, and built it into the largest verified Singapore MLBB community.</p>
+</section>
+
+<section class="panel">
+  <h2>Why Join?</h2>
+  <ul class="tick-list">
+    <li>Every member is verified &mdash; no smurf accounts, no time-wasters.</li>
+    <li>Daily ranked lobbies from Epic all the way to Mythic Glory.</li>
+    <li>Live tier list and hero guides updated from real match data every 6 hours.</li>
+    <li>Regular local tournaments with cash and in-game prizes.</li>
+    <li>Direct Q&amp;A with Mythic-rank players in the community chat.</li>
+    <li>Coaching sessions where high-rank players help climbers improve.</li>
+  </ul>
+</section>
+
+<section class="panel">
+  <h2>Frequently Asked Questions</h2>
+  <details class="faq-item" open>
+    <summary><span class="faq-q">How do I verify my MLBB account with SGS?</span><span class="faq-chev" aria-hidden="true">▾</span></summary>
+    <p class="faq-a">After joining the SGS Telegram group, follow the pinned verification message. The process takes under a minute &mdash; you screenshot your in-game profile and send it to the verification bot. Verified-only policy keeps scrims smurf-free.</p>
+  </details>
+  <details class="faq-item">
+    <summary><span class="faq-q">Is SGS only for Mythic-rank players?</span><span class="faq-chev" aria-hidden="true">▾</span></summary>
+    <p class="faq-a">No. SGS has daily lobbies from Epic through Mythic Glory &mdash; any serious Singapore player is welcome. We also run coaching sessions where higher-rank members help climbers improve.</p>
+  </details>
+  <details class="faq-item">
+    <summary><span class="faq-q">Does SGS cost anything to join?</span><span class="faq-chev" aria-hidden="true">▾</span></summary>
+    <p class="faq-a">No. SGS is completely free. We run on community goodwill, occasional tournament sponsorships, and the belief that local scenes grow faster when they stay open.</p>
+  </details>
+  <details class="faq-item">
+    <summary><span class="faq-q">Is SGS affiliated with Moonton?</span><span class="faq-chev" aria-hidden="true">▾</span></summary>
+    <p class="faq-a">No. SGS is an independent community-run group. Hero data on this site comes from the OpenMLBB community API. We are not affiliated with, endorsed by, or sponsored by Moonton.</p>
+  </details>
+</section>
+
+<section class="panel cta-panel">
+  <h2>Ready to Level Up?</h2>
+  <p>Don't grind solo. Join a community that plays to win.</p>
+  <div class="cta-buttons">
+    <a class="btn btn-primary btn-tg" href="{{ TELEGRAM_URL }}" target="_blank" rel="noopener" data-cta="about">
+      <span class="btn-shine" aria-hidden="true"></span>
+      <svg class="cta-icon" aria-hidden="true"><use href="#icon-tg"/></svg>
+      <span class="btn-label">Join Telegram &mdash; Free</span>
+      <span class="btn-spark" aria-hidden="true"></span>
+    </a>
+  </div>
+  <p class="cta-trust">Opens in Telegram &middot; No sign-up &middot; Leave anytime</p>
+</section>
+{% endblock %}

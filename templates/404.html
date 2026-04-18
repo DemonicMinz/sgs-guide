@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero-banner">
+  <div class="hero-banner-inner" style="text-align: center;">
+    <h1>404 <span class="year">— Hero Not Found</span></h1>
+    <p>This page got ganked. The URL you followed doesn't exist in our roster —
+       maybe a hero slug typo, or an old link from before the last patch.</p>
+    <div class="cta-buttons" style="justify-content: center; display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px;">
+      <a class="btn btn-primary" href="{{ url_for('index') }}">Browse Heroes</a>
+      <a class="btn btn-secondary" href="{{ url_for('tier_list_page') }}">Tier List</a>
+      <a class="btn btn-primary btn-tg" href="{{ TELEGRAM_URL }}" target="_blank" rel="noopener" data-cta="404">
+        <span class="btn-shine" aria-hidden="true"></span>
+        <svg class="cta-icon" aria-hidden="true"><use href="#icon-tg"/></svg>
+        <span class="btn-label">Join Telegram</span>
+        <span class="btn-spark" aria-hidden="true"></span>
+      </a>
+    </div>
+  </div>
+</section>
+{% endblock %}

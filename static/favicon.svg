@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="SGS">
+  <title>Singapore Gaming Syndicate</title>
+  <!-- background tile -->
+  <rect width="64" height="64" rx="10" fill="#0a0a0f"/>
+  <!-- outer hexagon (gold ring) -->
+  <polygon points="32,6 56,19 56,45 32,58 8,45 8,19"
+           fill="none" stroke="#FFD700" stroke-width="3" stroke-linejoin="round"/>
+  <!-- inner hexagon (gold fill) -->
+  <polygon points="32,12 51,22 51,42 32,52 13,42 13,22"
+           fill="#C69A1A" stroke="#FFD700" stroke-width="1.5" stroke-linejoin="round"/>
+  <!-- SGS text -->
+  <text x="32" y="40" text-anchor="middle"
+        font-family="Impact, 'Arial Black', system-ui, sans-serif"
+        font-size="18" font-weight="900"
+        fill="#ffffff" letter-spacing="-0.5">SGS</text>
+</svg>

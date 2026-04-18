@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block og_image %}
+<meta property="og:image" content="{{ SITE_URL }}{{ static_url('og-default.png') }}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="MLBB meta analysis — top picks, win rates and bans">
+<meta name="twitter:image" content="{{ SITE_URL }}{{ static_url('og-default.png') }}">
+{% endblock %}
+
+{% block schema %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "{{ page_title }}",
+  "description": {{ page_desc | tojson }},
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "{{ SITE_URL }}{{ canonical }}" },
+  "author": { "@id": "{{ SITE_URL }}/#organization" },
+  "publisher": { "@id": "{{ SITE_URL }}/#organization" },
+  "datePublished": "{{ TODAY_ISO }}",
+  "dateModified": "{{ TODAY_ISO }}",
+  "inLanguage": "{{ LANG_TAG }}",
+  "about": {
+    "@type": "VideoGame",
+    "name": "Mobile Legends: Bang Bang",
+    "applicationCategory": "GameApplication"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "name": "Top 10 MLBB heroes by win rate",
+  "numberOfItems": {{ by_wr|length }},
+  "itemListElement": [
+    {% for h in by_wr %}
+    { "@type": "ListItem", "position": {{ loop.index }},
+      "url": "{{ SITE_URL }}/hero/{{ h.slug }}",
+      "name": "{{ h.name }}", "image": "{{ h.head }}" }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "{{ SITE_URL }}/" },
+    { "@type": "ListItem", "position": 2, "name": "Meta", "item": "{{ SITE_URL }}{{ canonical }}" }
+  ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <h1>MLBB Meta 2026 — Top Picks, Win Rates &amp; Bans</h1>
+  <p>What's dominating ranked right now. Pulled from real match data, refreshed {{ updated }}.</p>
+</section>
+
+<section class="meta-grid">
+  <div class="meta-col">
+    <h2>Top 10 Win Rate</h2>
+    <ol class="meta-list">
+      {% for h in by_wr %}
+        <li>
+          <a href="{{ url_for('hero_page', slug=h.slug) }}">
+            <img src="{{ h.head }}" alt="{{ h.name }}" width="40" height="40"
+                 decoding="async" {% if loop.index <= 3 %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>
+            <span class="mn">{{ h.name }}</span>
+            <span class="mv tier-{{ h.tier }}">{{ pct(h.win_rate, 1) }}</span>
+          </a>
+        </li>
+      {% endfor %}
+    </ol>
+  </div>
+  <div class="meta-col">
+    <h2>Top 10 Most Picked</h2>
+    <ol class="meta-list">
+      {% for h in by_pick %}
+        <li>
+          <a href="{{ url_for('hero_page', slug=h.slug) }}">
+            <img src="{{ h.head }}" alt="{{ h.name }}" width="40" height="40"
+                 loading="lazy" decoding="async">
+            <span class="mn">{{ h.name }}</span>
+            <span class="mv">{{ pct(h.pick_rate, 2) }}</span>
+          </a>
+        </li>
+      {% endfor %}
+    </ol>
+  </div>
+  <div class="meta-col">
+    <h2>Top 10 Most Banned</h2>
+    <ol class="meta-list">
+      {% for h in by_ban %}
+        <li>
+          <a href="{{ url_for('hero_page', slug=h.slug) }}">
+            <img src="{{ h.head }}" alt="{{ h.name }}" width="40" height="40"
+                 loading="lazy" decoding="async">
+            <span class="mn">{{ h.name }}</span>
+            <span class="mv">{{ pct(h.ban_rate, 1) }}</span>
+          </a>
+        </li>
+      {% endfor %}
+    </ol>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Best Team Compositions This Patch</h2>
+  <div class="comp-grid">
+    <article class="comp-card">
+      <h3>Poke &amp; Siege</h3>
+      <p>Pick two long-range mages plus a tanky roamer to dictate the macro. Works best when the top-3 win rate heroes include sustained-damage mages.</p>
+    </article>
+    <article class="comp-card">
+      <h3>Dive &amp; Burst</h3>
+      <p>Pair the current best tank with an assassin from the win-rate list. Ban aggressive peelers like heroes with un-targetable states.</p>
+    </article>
+    <article class="comp-card">
+      <h3>Protect the Marksman</h3>
+      <p>Lock in the top-pick marksman, then stack two peel supports plus a frontline fighter. Ideal in high-ban meta where assassins are gone.</p>
+    </article>
+  </div>
+</section>
+{% endblock %}

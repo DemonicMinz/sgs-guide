@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+
+{% block schema %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "@id": "{{ SITE_URL }}{{ canonical }}#page",
+  "name": "{{ page_title }}",
+  "description": {{ page_desc | tojson }},
+  "url": "{{ SITE_URL }}{{ canonical }}",
+  "inLanguage": "{{ LANG_TAG }}",
+  "datePublished": "{{ TODAY_ISO }}",
+  "dateModified": "{{ TODAY_ISO }}",
+  "isPartOf": { "@id": "{{ SITE_URL }}/#website" },
+  "publisher": { "@id": "{{ SITE_URL }}/#organization" },
+  "about": {
+    "@type": "VideoGame",
+    "name": "Mobile Legends: Bang Bang",
+    "applicationCategory": "GameApplication"
+  },
+  "mainEntity": {
+    "@type": "ItemList",
+    "name": "Best {{ role }}s in MLBB 2026",
+    "numberOfItems": {{ heroes|length }},
+    "itemListOrder": "https://schema.org/ItemListOrderDescending",
+    "itemListElement": [
+      {% for h in heroes %}
+      { "@type": "ListItem", "position": {{ loop.index }},
+        "url": "{{ SITE_URL }}/hero/{{ h.slug }}",
+        "name": "{{ h.name }}", "image": "{{ h.head }}" }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ]
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Who is the best {{ role|lower }} in MLBB 2026?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The highest win-rate {{ role|lower }} right now is {% if top10 %}{{ top10[0].name }} at {{ pct(top10[0].win_rate, 1) }}{% else %}varies by patch{% endif %}. The top 10 {{ role|lower }}s on this page refresh every 6 hours from real ranked match data."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How many {{ role|lower }} heroes are there in Mobile Legends?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "There are {{ heroes|length }} {{ role|lower }} heroes currently indexed on SGS, ranked live by 7-day win rate across all ranked tiers."
+      }
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "{{ SITE_URL }}/" },
+    { "@type": "ListItem", "position": 2, "name": "{{ role }}s", "item": "{{ SITE_URL }}{{ canonical }}" }
+  ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="{{ url_for('index') }}">Heroes</a>
+  <span class="sep">/</span>
+  <span>{{ role }}s</span>
+</nav>
+
+<section class="page-head" style="--role-color: {{ role_color }}">
+  <h1>Best {{ role }}s in Mobile Legends {{ CURRENT_MONTH }}</h1>
+  <p>{{ intro }}</p>
+  <p class="updated-line">
+    <span class="updated-badge">Last updated <time datetime="{{ TODAY_ISO }}">{{ UPDATED_HUMAN }}</time></span>
+    &middot; {{ heroes|length }} {{ role|lower }} heroes indexed &middot; stats refreshed {{ updated }}
+  </p>
+</section>
+
+{% if hero_pool and hero_pool.comfort %}
+<section class="panel hero-pool">
+  <h2>Recommended 3-Hero {{ role }} Pool</h2>
+  <p class="hero-pool-intro">
+    Pro-coach framework: every serious {{ role|lower }} player should master
+    <strong>three heroes</strong> — a <em>comfort pick</em> to spam, a
+    <em>counter pick</em> to draft into specific enemies, and a
+    <em>safe blind pick</em> that works into anything. Here's the live
+    SGS-recommended {{ role|lower }} pool for {{ CURRENT_MONTH }}:
+  </p>
+  <div class="pool-grid">
+    {% for slot, label, hint in [
+        ('comfort',    'Comfort Pick',     'Highest pick rate — safe to spam'),
+        ('counter',    'Counter Pick',     'High WR, low pick — surprise value'),
+        ('safe_blind', 'Safe Blind Pick',  'First-pick-friendly; never busts')
+      ] %}
+      {% set h = hero_pool[slot] %}
+      {% if h %}
+      <a class="pool-card" href="{{ url_for('hero_page', slug=h.slug) }}">
+        <span class="pool-label">{{ label }}</span>
+        <img src="{{ h.head }}" alt="{{ h.name }} — best {{ label|lower }} {{ role|lower }} in MLBB"
+             width="72" height="72" loading="lazy" decoding="async">
+        <span class="pool-name">{{ h.name }}</span>
+        <span class="pool-wr tier-{{ h.tier }}">WR {{ pct(h.win_rate, 1) }}</span>
+        <span class="pool-hint">{{ hint }}</span>
+      </a>
+      {% endif %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if top10 %}
+<section class="panel">
+  <h2>Top 10 {{ role }}s by Win Rate</h2>
+  <ol class="meta-list">
+    {% for h in top10 %}
+      <li>
+        <a href="{{ url_for('hero_page', slug=h.slug) }}">
+          <img src="{{ h.head }}" alt="{{ h.name }} MLBB {{ role|lower }}" width="40" height="40"
+               decoding="async" {% if loop.index <= 3 %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>
+          <span class="mn">{{ h.name }}</span>
+          <span class="mv tier-{{ h.tier }}">{{ pct(h.win_rate, 1) }}</span>
+        </a>
+      </li>
+    {% endfor %}
+  </ol>
+</section>
+{% endif %}
+
+{% set tier_config = [
+  ('SS', '#ff4d6d', 'Meta-Defining'),
+  ('S',  '#FFD700', 'Dominant'),
+  ('A',  '#9c88ff', 'Strong'),
+  ('B',  '#70a1ff', 'Balanced'),
+  ('C',  '#c0c0c0', 'Situational'),
+  ('D',  '#808080', 'Struggling')
+] %}
+
+{% for letter, color, label in tier_config %}
+  {% if tier_buckets[letter] %}
+  <section class="tier-section tier-{{ letter|lower }}" style="--tier-color: {{ color }}">
+    <h2>
+      <span class="tier-letter">{{ letter }}</span>
+      <span class="tier-label">
+        <span class="tier-label-main">{{ label }} {{ role }}s</span>
+      </span>
+      <span class="tier-count">{{ tier_buckets[letter]|length }} heroes</span>
+    </h2>
+    <div class="tier-row">
+      {% for h in tier_buckets[letter] %}
+        <a class="tier-card" href="{{ url_for('hero_page', slug=h.slug) }}" title="{{ h.name }} — WR {{ pct(h.win_rate) }}">
+          <img src="{{ h.head }}" alt="{{ h.name }}" width="88" height="88"
+               loading="lazy" decoding="async">
+          <span class="tc-name">{{ h.name }}</span>
+          <span class="tc-wr">{{ pct(h.win_rate, 1) }}</span>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+{% endfor %}
+
+<section class="panel">
+  <h2>Browse Other Roles</h2>
+  <ul class="role-link-grid">
+    {% for role_name, color in ROLE_COLORS.items() %}
+      {% if role_name != role %}
+        <li>
+          <a class="role-link" href="{{ url_for('role_page', role=role_name|lower) }}"
+             style="--rc: {{ color }}">
+            <span class="role-link-name">Best {{ role_name }}s</span>
+            <span class="role-link-arrow" aria-hidden="true">→</span>
+          </a>
+        </li>
+      {% endif %}
+    {% endfor %}
+  </ul>
+</section>
+
+<!-- Cross-axis related guides — lane + patch to tighten the topical cluster -->
+<section class="panel related-panel">
+  <h2>Related MLBB Guides</h2>
+  <div class="related-grid">
+    <a class="related-card" href="{{ url_for('lane_page', lane='jungle') }}" style="--rc: #8bc34a">
+      <span class="related-kicker">By Lane</span>
+      <span class="related-title">Best {{ role }}s by Lane</span>
+      <span class="related-desc">Switch axis — see {{ role|lower }}s grouped by Jungle / Mid / Exp / Gold / Roam instead.</span>
+    </a>
+    <a class="related-card" href="{{ url_for('patch_notes_page') }}">
+      <span class="related-kicker">Patch Meta</span>
+      <span class="related-title">MLBB Meta Report — {{ CURRENT_MONTH }}</span>
+      <span class="related-desc">See which {{ role|lower }}s are meta-definers, ban-priorities or hidden-OP this patch.</span>
+    </a>
+    <a class="related-card" href="{{ url_for('tier_list_page') }}">
+      <span class="related-kicker">Full Tier List</span>
+      <span class="related-title">Full MLBB Tier List {{ CURRENT_MONTH }}</span>
+      <span class="related-desc">Every MLBB hero ranked SS through D by live 7-day win rate, all roles and lanes combined.</span>
+    </a>
+  </div>
+</section>
+{% endblock %}

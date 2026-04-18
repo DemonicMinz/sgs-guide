@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+
+{% block schema %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "@id": "{{ SITE_URL }}{{ canonical }}#page",
+  "name": "{{ page_title }}",
+  "description": {{ page_desc | tojson }},
+  "url": "{{ SITE_URL }}{{ canonical }}",
+  "inLanguage": "{{ LANG_TAG }}",
+  "datePublished": "{{ TODAY_ISO }}",
+  "dateModified": "{{ TODAY_ISO }}",
+  "isPartOf": { "@id": "{{ SITE_URL }}/#website" },
+  "publisher": { "@id": "{{ SITE_URL }}/#organization" },
+  "about": {
+    "@type": "VideoGame",
+    "name": "Mobile Legends: Bang Bang",
+    "applicationCategory": "GameApplication"
+  },
+  "mainEntity": {
+    "@type": "ItemList",
+    "name": "Best {{ lane_name }} Heroes in MLBB 2026",
+    "numberOfItems": {{ heroes|length }},
+    "itemListOrder": "https://schema.org/ItemListOrderDescending",
+    "itemListElement": [
+      {% for h in heroes %}
+      { "@type": "ListItem", "position": {{ loop.index }},
+        "url": "{{ SITE_URL }}/hero/{{ h.slug }}",
+        "name": "{{ h.name }}", "image": "{{ h.head }}" }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ]
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Who is the best {{ lane_name|lower }} hero in MLBB 2026?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The highest win-rate {{ lane_name|lower }} hero right now is {% if top10 %}{{ top10[0].name }} at {{ pct(top10[0].win_rate, 1) }}{% else %}varies by patch{% endif %}. The top 10 {{ lane_name|lower }} heroes on this page refresh every 6 hours from real ranked match data."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How many heroes can play {{ lane_name }} in Mobile Legends?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "{{ heroes|length }} heroes are viable in the {{ lane_name }} right now — ranked live by 7-day win rate across all MLBB ranked tiers."
+      }
+    }{% if role_breakdown %},
+    {
+      "@type": "Question",
+      "name": "What role plays {{ lane_name }} in MLBB?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "{{ lane_name }} is played primarily by {% for role, count in role_breakdown[:3] %}{{ role }}s ({{ count }} heroes){% if not loop.last %}, {% endif %}{% endfor %}. The lane role mix reflects the kit requirements for {{ lane_label|lower }} play."
+      }
+    }{% endif %}
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "{{ SITE_URL }}/" },
+    { "@type": "ListItem", "position": 2, "name": "Lanes", "item": "{{ SITE_URL }}/lane/jungle" },
+    { "@type": "ListItem", "position": 3, "name": "{{ lane_name }}", "item": "{{ SITE_URL }}{{ canonical }}" }
+  ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="{{ url_for('index') }}">Heroes</a>
+  <span class="sep">/</span>
+  <span>{{ lane_name }}</span>
+</nav>
+
+<section class="page-head" style="--role-color: {{ lane_color }}">
+  <h1>Best {{ lane_label }}s in Mobile Legends {{ CURRENT_MONTH }}</h1>
+  <p>{{ intro }}</p>
+  <p class="updated-line">
+    <span class="updated-badge">Last updated <time datetime="{{ TODAY_ISO }}">{{ UPDATED_HUMAN }}</time></span>
+    &middot; {{ heroes|length }} {{ lane_name|lower }} heroes indexed &middot; stats refreshed {{ updated }}
+  </p>
+</section>
+
+{% if role_breakdown %}
+<section class="panel">
+  <h2>{{ lane_name }} Role Breakdown</h2>
+  <p class="muted">
+    {{ lane_name }} in MLBB isn't dominated by one class — here's how the viable
+    pool splits across roles this patch:
+  </p>
+  <ul class="lane-role-breakdown">
+    {% for role, count in role_breakdown %}
+      <li>
+        <a href="{{ url_for('role_page', role=role|lower) }}" class="lrb-chip"
+           style="--rc: {{ ROLE_COLORS.get(role, '#FFD700') }}">
+          <span class="lrb-role">{{ role }}</span>
+          <span class="lrb-count">{{ count }} hero{% if count != 1 %}es{% endif %}</span>
+          <span class="lrb-pct">{{ (count * 100 / heroes|length)|round(0)|int }}%</span>
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+{% if hero_pool and hero_pool.comfort %}
+<section class="panel hero-pool">
+  <h2>Recommended 3-Hero {{ lane_name }} Pool</h2>
+  <p class="hero-pool-intro">
+    Pro-coach framework: every serious {{ lane_label|lower }} should master
+    <strong>three heroes</strong> — a <em>comfort pick</em> to spam, a
+    <em>counter pick</em> to draft into specific enemies, and a
+    <em>safe blind pick</em> that works into anything. Here's the live
+    SGS-recommended {{ lane_name|lower }} pool for {{ CURRENT_MONTH }}:
+  </p>
+  <div class="pool-grid">
+    {% for slot, label, hint in [
+        ('comfort',    'Comfort Pick',     'Highest pick rate — safe to spam'),
+        ('counter',    'Counter Pick',     'High WR, low pick — surprise value'),
+        ('safe_blind', 'Safe Blind Pick',  'First-pick-friendly; never busts')
+      ] %}
+      {% set h = hero_pool[slot] %}
+      {% if h %}
+      <a class="pool-card" href="{{ url_for('hero_page', slug=h.slug) }}">
+        <span class="pool-label">{{ label }}</span>
+        <img src="{{ h.head }}" alt="{{ h.name }} — best {{ label|lower }} {{ lane_name|lower }} in MLBB"
+             width="72" height="72" loading="lazy" decoding="async">
+        <span class="pool-name">{{ h.name }}</span>
+        <span class="pool-wr tier-{{ h.tier }}">WR {{ pct(h.win_rate, 1) }}</span>
+        <span class="pool-hint">{{ hint }}</span>
+      </a>
+      {% endif %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if tips %}
+<section class="panel">
+  <h2>How to Play {{ lane_name }} in 2026</h2>
+  <ol class="lane-tips">
+    {% for tip in tips %}
+      <li>{{ tip }}</li>
+    {% endfor %}
+  </ol>
+</section>
+{% endif %}
+
+{% if top10 %}
+<section class="panel">
+  <h2>Top 10 {{ lane_label }}s by Win Rate</h2>
+  <ol class="meta-list">
+    {% for h in top10 %}
+      <li>
+        <a href="{{ url_for('hero_page', slug=h.slug) }}">
+          <img src="{{ h.head }}" alt="{{ h.name }} — MLBB {{ lane_name|lower }} hero" width="40" height="40"
+               decoding="async" {% if loop.index <= 3 %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>
+          <span class="mn">{{ h.name }}</span>
+          <span class="mv tier-{{ h.tier }}">{{ pct(h.win_rate, 1) }}</span>
+        </a>
+      </li>
+    {% endfor %}
+  </ol>
+</section>
+{% endif %}
+
+{% set tier_config = [
+  ('SS', '#ff4d6d', 'Meta-Defining'),
+  ('S',  '#FFD700', 'Dominant'),
+  ('A',  '#9c88ff', 'Strong'),
+  ('B',  '#70a1ff', 'Balanced'),
+  ('C',  '#c0c0c0', 'Situational'),
+  ('D',  '#808080', 'Struggling')
+] %}
+
+{% for letter, color, label in tier_config %}
+  {% if tier_buckets[letter] %}
+  <section class="tier-section tier-{{ letter|lower }}" style="--tier-color: {{ color }}">
+    <h2>
+      <span class="tier-letter">{{ letter }}</span>
+      <span class="tier-label">
+        <span class="tier-label-main">{{ label }} {{ lane_name }} Heroes</span>
+      </span>
+      <span class="tier-count">{{ tier_buckets[letter]|length }} heroes</span>
+    </h2>
+    <div class="tier-row">
+      {% for h in tier_buckets[letter] %}
+        <a class="tier-card" href="{{ url_for('hero_page', slug=h.slug) }}" title="{{ h.name }} — WR {{ pct(h.win_rate) }}">
+          <img src="{{ h.head }}" alt="{{ h.name }}" width="88" height="88"
+               loading="lazy" decoding="async">
+          <span class="tc-name">{{ h.name }}</span>
+          <span class="tc-wr">{{ pct(h.win_rate, 1) }}</span>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+{% endfor %}
+
+<section class="panel">
+  <h2>Browse Other Lanes</h2>
+  <ul class="role-link-grid">
+    {% for slug, meta in LANE_META.items() %}
+      {% if slug != lane_slug %}
+        <li>
+          <a class="role-link" href="{{ url_for('lane_page', lane=slug) }}"
+             style="--rc: {{ meta.color }}">
+            <span class="role-link-name">Best {{ meta.label }}s</span>
+            <span class="role-link-arrow" aria-hidden="true">→</span>
+          </a>
+        </li>
+      {% endif %}
+    {% endfor %}
+  </ul>
+</section>
+
+<!-- Cross-axis related guides — role + patch to tighten the topical cluster -->
+<section class="panel related-panel">
+  <h2>Related MLBB Guides</h2>
+  <div class="related-grid">
+    {% if role_breakdown %}
+      {% set dominant_role = role_breakdown[0][0] %}
+      <a class="related-card" href="{{ url_for('role_page', role=dominant_role|lower) }}"
+         style="--rc: {{ ROLE_COLORS.get(dominant_role, '#FFD700') }}">
+        <span class="related-kicker">By Role</span>
+        <span class="related-title">Best {{ dominant_role }}s in MLBB {{ CURRENT_MONTH }}</span>
+        <span class="related-desc">{{ lane_name }} is dominated by {{ dominant_role|lower }}s — see the full role-based tier list.</span>
+      </a>
+    {% endif %}
+    <a class="related-card" href="{{ url_for('patch_notes_page') }}">
+      <span class="related-kicker">Patch Meta</span>
+      <span class="related-title">MLBB Meta Report — {{ CURRENT_MONTH }}</span>
+      <span class="related-desc">See which {{ lane_name|lower }} heroes are meta-definers, ban-priorities or hidden-OP this patch.</span>
+    </a>
+    <a class="related-card" href="{{ url_for('tier_list_page') }}">
+      <span class="related-kicker">Full Tier List</span>
+      <span class="related-title">Full MLBB Tier List {{ CURRENT_MONTH }}</span>
+      <span class="related-desc">Every MLBB hero ranked SS through D by live 7-day win rate, all roles and lanes combined.</span>
+    </a>
+  </div>
+</section>
+{% endblock %}

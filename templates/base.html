@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="{{ LANG_TAG }}">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0f">
+
+<title>{{ page_title }}</title>
+<meta name="description" content="{{ page_desc }}">
+{% if page_keywords %}<meta name="keywords" content="{{ page_keywords }}">{% endif %}
+<meta name="robots" content="{{ robots_meta or 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1' }}">
+<meta name="googlebot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+<meta name="author" content="{{ SITE_NAME }}">
+<meta name="publisher" content="{{ SITE_NAME }}">
+
+<link rel="canonical" href="{{ SITE_URL }}{{ canonical }}">
+<link rel="alternate" href="{{ SITE_URL }}{{ canonical }}" hreflang="{{ LANG_TAG }}">
+<link rel="alternate" href="{{ SITE_URL }}{{ canonical }}" hreflang="x-default">
+
+<!-- Geo targeting: signals Singapore relevance to search engines. -->
+<meta name="geo.region" content="{{ GEO_REGION }}">
+<meta name="geo.placename" content="{{ GEO_PLACENAME }}">
+<meta name="geo.position" content="{{ GEO_ICBM }}">
+<meta name="ICBM" content="{{ GEO_ICBM }}">
+
+<!-- Open Graph -->
+<meta property="og:site_name" content="{{ SITE_NAME }}">
+<meta property="og:type" content="{{ og_type or 'website' }}">
+<meta property="og:title" content="{{ page_title }}">
+<meta property="og:description" content="{{ page_desc }}">
+<meta property="og:url" content="{{ SITE_URL }}{{ canonical }}">
+<meta property="og:locale" content="en_SG">
+<meta property="og:locale:alternate" content="en_US">
+{% block og_image %}
+<meta property="og:image" content="{{ SITE_URL }}{{ static_url('og-default.png') }}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="{{ SITE_NAME }} — MLBB hero guides and live tier list">
+<meta name="twitter:image" content="{{ SITE_URL }}{{ static_url('og-default.png') }}">
+{% endblock %}
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ page_title }}">
+<meta name="twitter:description" content="{{ page_desc }}">
+<meta name="twitter:site" content="@SGSingapore">
+
+<!-- Search-engine verification (populated from env vars) -->
+{% if GOOGLE_VERIFICATION %}<meta name="google-site-verification" content="{{ GOOGLE_VERIFICATION }}">{% endif %}
+{% if BING_VERIFICATION %}<meta name="msvalidate.01" content="{{ BING_VERIFICATION }}">{% endif %}
+{% if YANDEX_VERIFICATION %}<meta name="yandex-verification" content="{{ YANDEX_VERIFICATION }}">{% endif %}
+
+<!-- PWA + favicons -->
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/static/icon-32.png">
+<link rel="apple-touch-icon" href="/static/icon-192.png">
+<link rel="manifest" href="/manifest.webmanifest">
+
+<link rel="apple-touch-icon" href="{{ static_url('icon-192.png') }}">
+
+<!-- Perf: open TCP/TLS to every 3rd-party origin we'll need, as early as possible -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://akmweb.youngjoygame.com" crossorigin>
+<link rel="dns-prefetch" href="https://akmweb.youngjoygame.com">
+{% if GA4_ID %}
+<link rel="preconnect" href="https://www.googletagmanager.com" crossorigin>
+{% endif %}
+
+<!-- Fonts: loaded async so they don't block first paint. `display=swap` lets
+     text render in a system font first, then swap when the web font arrives —
+     keeps LCP fast even on cold connections. -->
+<link rel="preload" as="style"
+      href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Inter:wght@400;500;600&display=swap"
+      onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Inter:wght@400;500;600&display=swap"></noscript>
+
+<!-- Site CSS — render-blocking by design (keeps FOUC away). Brotli/gzip on the
+     wire makes this ~10KB, so blocking is fine. -->
+<link rel="stylesheet" href="{{ static_url('style.css') }}">
+
+<!-- Prefetch likely next navigation for repeat visitors (tier list is #2 page). -->
+{% if request.endpoint == 'index' %}
+<link rel="prefetch" href="{{ url_for('tier_list_page') }}" as="document">
+<link rel="prefetch" href="{{ url_for('meta_page') }}" as="document">
+{% endif %}
+
+{% block extra_head %}{% endblock %}
+
+{% if GA4_ID %}
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ GA4_ID }}"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', '{{ GA4_ID }}');
+</script>
+{% endif %}
+
+<!-- ═══ Global schema.org — Organization + WebSite ═══
+     Organization establishes brand entity so Google can build a Knowledge
+     Panel entry. SameAs links anchor the brand to authoritative profiles. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "{{ SITE_URL }}/#organization",
+      "name": "{{ SITE_NAME }}",
+      "alternateName": "{{ SITE_SHORT }}",
+      "url": "{{ SITE_URL }}/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "{{ SITE_URL }}{{ static_url('og-default.png') }}",
+        "width": 1200,
+        "height": 630
+      },
+      "sameAs": [
+        "{{ TELEGRAM_URL }}"
+      ],
+      "areaServed": {
+        "@type": "Country",
+        "name": "Singapore"
+      },
+      "foundingLocation": {
+        "@type": "Place",
+        "name": "Singapore"
+      },
+      "knowsAbout": [
+        "Mobile Legends: Bang Bang",
+        "MLBB tier list",
+        "MLBB hero guides",
+        "Competitive mobile gaming",
+        "Singapore esports"
+      ],
+      "slogan": "{{ SITE_TAGLINE }}"
+    },
+    {
+      "@type": "WebSite",
+      "@id": "{{ SITE_URL }}/#website",
+      "url": "{{ SITE_URL }}/",
+      "name": "{{ SITE_NAME }}",
+      "description": "Live MLBB tier list, hero guides and meta analysis, built for the Singapore community.",
+      "publisher": { "@id": "{{ SITE_URL }}/#organization" },
+      "inLanguage": "{{ LANG_TAG }}",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "{{ SITE_URL }}/?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    }
+  ]
+}
+</script>
+
+{% block schema %}{% endblock %}
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="icon-tg" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M21.94 4.69c.23-.92-.43-1.43-1.16-1.1L3.8 10.12c-1.09.44-1.08 1.05-.2 1.3l4.1 1.3 9.52-6.01c.44-.27.85-.12.52.19l-7.68 6.92-.28 4.23c.42 0 .6-.19.83-.42l1.99-1.93 4.13 3.06c.76.42 1.31.2 1.5-.71L21.94 4.69z"/>
+  </symbol>
+  <symbol id="icon-arrow" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M13 5l7 7-7 7-1.4-1.4L16.2 13H4v-2h12.2l-4.6-4.6L13 5z"/>
+  </symbol>
+</svg>
+
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="{{ url_for('index') }}">
+      <span class="brand-badge">SGS</span>
+      <span class="brand-text">
+        <span class="brand-name">
+          <span class="bn-full">{{ SITE_NAME }}</span>
+          <span class="bn-mid">SGS &middot; Singapore</span>
+          <span class="bn-short">SGS</span>
+        </span>
+        <span class="brand-tagline">{{ SITE_TAGLINE }}</span>
+      </span>
+    </a>
+    <nav class="site-nav" aria-label="Primary">
+      <a href="{{ url_for('index') }}"{% if request.endpoint == 'index' %} aria-current="page"{% endif %}>Heroes</a>
+      <a href="{{ url_for('tier_list_page') }}"{% if request.endpoint == 'tier_list_page' %} aria-current="page"{% endif %}>Tier List</a>
+      <a href="{{ url_for('meta_page') }}"{% if request.endpoint == 'meta_page' %} aria-current="page"{% endif %}>Meta</a>
+      <a href="{{ url_for('patch_notes_page') }}"{% if request.endpoint == 'patch_notes_page' %} aria-current="page"{% endif %}>Patch Notes</a>
+      <a href="{{ url_for('about_page') }}"{% if request.endpoint == 'about_page' %} aria-current="page"{% endif %}>About</a>
+    </nav>
+    <a class="header-cta" href="{{ TELEGRAM_URL }}" target="_blank" rel="noopener" data-cta="header">
+      <svg class="cta-icon" aria-hidden="true"><use href="#icon-tg"/></svg>
+      <span class="header-cta-full">Join Telegram</span>
+      <span class="header-cta-short">Join</span>
+    </a>
+  </div>
+</header>
+
+{# Stale-data banner: only renders if the underlying OpenMLBB API cache is
+   older than SGS_STALE_THRESHOLD_H hours (default 24h). Silences itself
+   completely when data is fresh, so it costs nothing for normal visitors. #}
+{% if DATA_FRESHNESS and DATA_FRESHNESS.status != 'fresh' %}
+<div class="stale-banner" role="status" aria-live="polite">
+  <div class="container stale-banner-inner">
+    <span class="stale-icon" aria-hidden="true">&#9888;</span>
+    <div class="stale-copy">
+      {% if DATA_FRESHNESS.status == 'stale' %}
+        <strong>Data may be out of date.</strong>
+        Upstream stats were last refreshed <time datetime="{{ DATA_FRESHNESS.as_of }}">{{ DATA_FRESHNESS.human }}</time>
+        ({{ DATA_FRESHNESS.hours }}h &gt; {{ DATA_FRESHNESS.threshold }}h threshold).
+        Tier and win-rate numbers below may be stale.
+      {% else %}
+        <strong>Data refresh pending.</strong>
+        We haven't successfully loaded live stats yet &mdash; check back in a few minutes.
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<main class="container">
+{% block content %}{% endblock %}
+</main>
+
+{% if not hide_cta_band %}
+<section class="cta-band">
+  <div class="container cta-inner">
+    <div class="cta-copy">
+      <h2>Find Your Squad in Singapore</h2>
+      <p>Daily scrims from Epic to Mythic Glory &mdash; verified Singapore players only. No smurfs. No toxics.</p>
+    </div>
+    <div class="cta-actions">
+      <div class="cta-buttons">
+        <a class="btn btn-primary btn-tg" href="{{ TELEGRAM_URL }}" target="_blank" rel="noopener" data-cta="footer">
+          <span class="btn-shine" aria-hidden="true"></span>
+          <svg class="cta-icon" aria-hidden="true"><use href="#icon-tg"/></svg>
+          <span class="btn-label">Join Telegram &mdash; Free</span>
+          <span class="btn-spark" aria-hidden="true"></span>
+        </a>
+      </div>
+      <p class="cta-trust">Opens in Telegram &middot; No sign-up &middot; Leave anytime</p>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<footer class="site-footer">
+  <div class="container">
+    <p>&copy; {{ YEAR }} {{ SITE_NAME }}. Not affiliated with Moonton.</p>
+    <p class="foot-links">
+      <a href="{{ url_for('index') }}">Heroes</a> ·
+      <a href="{{ url_for('tier_list_page') }}">Tier List</a> ·
+      <a href="{{ url_for('meta_page') }}">Meta</a> ·
+      <a href="{{ url_for('patch_notes_page') }}">Patch Notes</a> ·
+      <a href="{{ url_for('about_page') }}">About</a> ·
+      <a href="{{ TELEGRAM_URL }}" target="_blank" rel="noopener">Telegram</a>
+    </p>
+    <p class="foot-note">Hero stats provided by the OpenMLBB community API, cached every 6 hours.
+      Data last refreshed {{ updated or 'moments ago' }}.</p>
+  </div>
+</footer>
+
+<a class="sticky-cta" href="{{ TELEGRAM_URL }}" target="_blank" rel="noopener"
+   data-cta="sticky" aria-label="Join the SGS Telegram community">
+  <span class="btn-shine" aria-hidden="true"></span>
+  <svg class="cta-icon" aria-hidden="true"><use href="#icon-tg"/></svg>
+  <span>Join Telegram</span>
+  <span class="sticky-dot" aria-hidden="true"></span>
+</a>
+
+<script src="{{ static_url('app.js') }}" defer></script>
+</body>
+</html>

@@ -1,0 +1,736 @@
+{% extends "base.html" %}
+
+{% set og_type = 'article' %}
+{% set hero_img = detail.painting or detail.head_big or detail.head %}
+
+{% block og_image %}
+{% if hero_img %}
+<meta property="og:image" content="{{ hero_img }}">
+<meta property="og:image:alt" content="{{ detail.name }} — MLBB {{ role }} hero">
+<meta name="twitter:image" content="{{ hero_img }}">
+{% else %}
+<meta property="og:image" content="{{ SITE_URL }}{{ static_url('og-default.png') }}">
+<meta name="twitter:image" content="{{ SITE_URL }}{{ static_url('og-default.png') }}">
+{% endif %}
+{% endblock %}
+
+{# Preload the hero splash image — it's the LCP element and the single biggest
+   contributor to perceived load time on this page. Starting the fetch from
+   <head> (rather than when <img> is parsed) typically saves 100–400ms. #}
+{% block extra_head %}
+{% if hero_img %}
+<link rel="preload" as="image" href="{{ hero_img }}" fetchpriority="high">
+{% endif %}
+{# Prefetch the three most relevant next clicks: counters + synergies.
+   These are the most likely hops on a hero page, so pre-warming the browser
+   cache shaves ~200ms off the next nav for engaged readers. #}
+{% for c in (counters or synergies or [])[:2] %}
+  {% if c.slug %}<link rel="prefetch" href="{{ url_for('hero_page', slug=c.slug) }}" as="document">{% endif %}
+{% endfor %}
+{% endblock %}
+
+{% block schema %}
+<!-- Article: Google's core content container for blog/editorial content -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "@id": "{{ SITE_URL }}{{ canonical }}#article",
+  "isPartOf": { "@id": "{{ SITE_URL }}/#website" },
+  "publisher": { "@id": "{{ SITE_URL }}/#organization" },
+  "author": { "@id": "{{ SITE_URL }}/#organization" },
+  "headline": "{{ detail.name }} Guide 2026 — Best Build, Combos & Counters",
+  "description": {{ page_desc | tojson }},
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "{{ SITE_URL }}{{ canonical }}" },
+  {% if hero_img %}"image": {
+    "@type": "ImageObject",
+    "url": "{{ hero_img }}",
+    "caption": "{{ detail.name }} splash art",
+    "representativeOfPage": true
+  },{% endif %}
+  "datePublished": "{{ TODAY_ISO }}",
+  "dateModified": "{{ TODAY_ISO }}",
+  "inLanguage": "{{ LANG_TAG }}",
+  "about": {
+    "@type": "VideoGame",
+    "name": "Mobile Legends: Bang Bang",
+    "alternateName": ["MLBB", "Mobile Legends"],
+    "applicationCategory": "GameApplication",
+    "gamePlatform": ["Android", "iOS"],
+    "publisher": { "@type": "Organization", "name": "Moonton" }
+  },
+  "mentions": [
+    {% for c in (counters or [])[:3] %}{% if c.name %}
+    { "@type": "Thing", "name": "{{ c.name }}" }{% if not loop.last %},{% endif %}
+    {% endif %}{% endfor %}
+  ]
+}
+</script>
+
+<!-- Breadcrumb: enables the rich breadcrumb display in SERP -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Heroes", "item": "{{ SITE_URL }}/" },
+    { "@type": "ListItem", "position": 2, "name": "{{ role }}s", "item": "{{ SITE_URL }}/role/{{ role|lower }}" },
+    { "@type": "ListItem", "position": 3, "name": "{{ detail.name }}", "item": "{{ SITE_URL }}{{ canonical }}" }
+  ]
+}
+</script>
+
+<!-- HowTo: triggers the "step-by-step" rich result for 'how to play X' queries -->
+{% if tips %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  "name": "How to Play {{ detail.name }} in MLBB (2026)",
+  "description": "Step-by-step guide to mastering {{ detail.name }} in ranked Mobile Legends.",
+  "totalTime": "PT20M",
+  "inLanguage": "{{ LANG_TAG }}",
+  "supply": [
+    { "@type": "HowToSupply", "name": "Mobile Legends: Bang Bang account" },
+    { "@type": "HowToSupply", "name": "Stable internet connection" }
+  ],
+  "step": [
+    {% for t in tips %}
+    {
+      "@type": "HowToStep",
+      "position": {{ loop.index }},
+      "name": "Step {{ loop.index }}",
+      "text": {{ t | tojson }},
+      "url": "{{ SITE_URL }}{{ canonical }}#tips"
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+</script>
+{% endif %}
+
+<!-- FAQPage: the single biggest SERP real-estate win. Google expands these
+     into inline accordion results for long-tail queries. -->
+{% if faqs %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "inLanguage": "{{ LANG_TAG }}",
+  "mainEntity": [
+    {% for f in faqs %}
+    {
+      "@type": "Question",
+      "name": {{ f.q | tojson }},
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": {{ f.a | tojson }}
+      }
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+</script>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="{{ url_for('index') }}">Heroes</a>
+  <span class="sep">/</span>
+  <span>{{ detail.name }}</span>
+</nav>
+
+<article class="hero-hero" style="--role-color: {{ role_color(role) }}">
+  <div class="hero-hero-art">
+    {% if detail.painting %}
+      <img src="{{ detail.painting }}" alt="{{ detail.name }} splash art"
+           width="1200" height="750" fetchpriority="high" decoding="async">
+    {% else %}
+      <img src="{{ detail.head_big or detail.head }}" alt="{{ detail.name }}"
+           width="600" height="600" fetchpriority="high" decoding="async">
+    {% endif %}
+  </div>
+  <div class="hero-hero-body">
+    <div class="hero-meta-row">
+      <span class="role-badge" style="background: {{ role_color(role) }}22; border-color: {{ role_color(role) }}">{{ role }}</span>
+      {% for lane in detail.lanes %}<span class="lane-badge">{{ lane }}</span>{% endfor %}
+      <span class="tier-pill tier-{{ tier }}">Tier {{ tier }}</span>
+    </div>
+    <h1>{{ detail.name }} Guide 2026 — Best Build, Combos & Counters</h1>
+    <p class="subtitle">
+      {{ detail.name }} is a {{ role|lower }} hero with {{ detail.difficulty_label|lower }} difficulty.
+      This is a live guide — win rate, pick rate and counter data refresh every 6 hours from real ranked matches.
+    </p>
+    <div class="stat-grid">
+      <div class="stat">
+        <span class="stat-label">Win Rate</span>
+        <span class="stat-value tier-{{ tier }}">{{ wr_pct }}</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Pick Rate</span>
+        <span class="stat-value">{{ pr_pct }}</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Ban Rate</span>
+        <span class="stat-value">{{ br_pct }}</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Difficulty</span>
+        <span class="stat-value">{{ detail.difficulty_label }}</span>
+      </div>
+    </div>
+    <p class="updated-line">
+      <span class="updated-badge">Updated <time datetime="{{ TODAY_ISO }}">{{ UPDATED_HUMAN }}</time></span>
+      &middot; live data refreshed {{ updated }} · every 6 hours
+    </p>
+  </div>
+</article>
+
+<!-- Tabs -->
+<nav class="hero-tabs" role="tablist" aria-label="{{ detail.name }} sections">
+  <a class="hero-tab is-active" role="tab" data-tab="overview" href="#overview" aria-selected="true">Overview</a>
+  {% if detail.skills %}<a class="hero-tab" role="tab" data-tab="skills"   href="#skills"   aria-selected="false">Skills</a>{% endif %}
+  {% if builds %}       <a class="hero-tab" role="tab" data-tab="builds"   href="#builds"   aria-selected="false">Builds <span class="tab-count">{{ builds|length }}</span></a>{% endif %}
+  <a class="hero-tab" role="tab" data-tab="counters" href="#counters" aria-selected="false">Counters</a>
+  <a class="hero-tab" role="tab" data-tab="synergy"  href="#synergy"  aria-selected="false">Synergy</a>
+  <a class="hero-tab" role="tab" data-tab="tips"     href="#tips"     aria-selected="false">Tips</a>
+  {% if faqs %}<a class="hero-tab" role="tab" data-tab="faq" href="#faq" aria-selected="false">FAQ</a>{% endif %}
+</nav>
+
+<div class="tab-panels">
+
+<!-- ───────────── Overview ───────────── -->
+<section class="panel tab-panel is-active" data-panel="overview" id="overview" role="tabpanel" aria-labelledby="tab-overview">
+  <h2>{{ detail.name }} Overview</h2>
+
+  {# ── Live performance dashboard ── #}
+  <div class="ov-stats">
+    <div class="ov-stat">
+      <span class="ov-stat-label">Tier</span>
+      <span class="ov-stat-val tier-{{ tier|lower }}">{{ tier }}</span>
+    </div>
+    <div class="ov-stat">
+      <span class="ov-stat-label">Win Rate</span>
+      <span class="ov-stat-val">{{ wr_pct }}</span>
+    </div>
+    <div class="ov-stat">
+      <span class="ov-stat-label">Pick Rate</span>
+      <span class="ov-stat-val">{{ pr_pct }}</span>
+    </div>
+    <div class="ov-stat">
+      <span class="ov-stat-label">Ban Rate</span>
+      <span class="ov-stat-val">{{ br_pct }}</span>
+    </div>
+    <div class="ov-stat">
+      <span class="ov-stat-label">Difficulty</span>
+      <span class="ov-stat-val">{{ detail.difficulty_label }}</span>
+    </div>
+    <div class="ov-stat">
+      <span class="ov-stat-label">Role</span>
+      <span class="ov-stat-val" style="color: {{ role_color(role) }};">{{ role }}</span>
+    </div>
+  </div>
+
+  {# ── Role / Lane / Specialities ── #}
+  <div class="ov-metacard">
+    {% if detail.roles %}
+    <div class="ov-metarow">
+      <span class="ov-metaname">Class</span>
+      <div class="ov-metavals">
+        {% for r in detail.roles %}
+          <span class="chip chip-role" style="color:{{ role_color(r) }}; border-color:{{ role_color(r) }};">{{ r }}</span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    {% if detail.lanes %}
+    <div class="ov-metarow">
+      <span class="ov-metaname">Lane</span>
+      <div class="ov-metavals">
+        {% for l in detail.lanes %}<span class="chip">{{ l }}</span>{% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    {% if detail.speciality %}
+    <div class="ov-metarow">
+      <span class="ov-metaname">Speciality</span>
+      <div class="ov-metavals">
+        {% for s in detail.speciality %}<span class="chip chip-gold">{{ s }}</span>{% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  {# ── Playstyle: strengths / weaknesses ── #}
+  {% if detail.relation_assist_desc or detail.relation_weak_desc %}
+  <div class="strength-grid">
+    {% if detail.relation_assist_desc %}
+    <div>
+      <h3>Playstyle Strengths</h3>
+      <p>{{ detail.relation_assist_desc }}</p>
+    </div>
+    {% endif %}
+    {% if detail.relation_weak_desc %}
+    <div>
+      <h3>Weaknesses</h3>
+      <p>{{ detail.relation_weak_desc }}</p>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {# ── Skill priority (visual) ── #}
+  {% if detail.recommend_level and detail.skills %}
+  <div class="ov-block">
+    <h3>Skill Priority</h3>
+    <p class="muted">Level up in this order when playing {{ detail.name }}:</p>
+    <ol class="ov-skillorder">
+      {% for lvl in detail.recommend_level %}
+        {% set lvl_i = lvl|int(0) %}
+        {% set s = detail.skills[lvl_i - 1] if lvl_i and lvl_i <= detail.skills|length else none %}
+        <li class="ov-skillstep">
+          {% if s and s.icon %}
+            <img src="{{ s.icon }}" alt="{{ s.name }}" width="48" height="48"
+                 loading="lazy" decoding="async">
+          {% else %}
+            <span class="iconitem-ph" aria-hidden="true">{{ lvl }}</span>
+          {% endif %}
+          <span class="ov-skillname">{{ s.name if s else 'Skill ' ~ lvl }}</span>
+        </li>
+        {% if not loop.last %}<span class="ov-skillarrow" aria-hidden="true">→</span>{% endif %}
+      {% endfor %}
+    </ol>
+  </div>
+  {% endif %}
+
+  {# ── Quick matchup summary ── #}
+  {% if counters or synergies or strong_against or weak_against or works_with %}
+  <div class="ov-block">
+    <h3>Matchup Summary</h3>
+    <div class="ov-matchup">
+      {% if synergies or works_with %}
+      <div class="ov-matchcol ov-match-good">
+        <h4>Plays Well With</h4>
+        <ul class="ov-matchlist">
+          {% for s in (synergies or works_with)[:3] %}
+            <li>
+              {% if s.head %}<img src="{{ s.head }}" alt="{{ s.name }}" width="40" height="40" loading="lazy" decoding="async">{% endif %}
+              {% if s.slug %}<a href="{{ url_for('hero_page', slug=s.slug) }}">{{ s.name }}</a>{% else %}<span>{{ s.name }}</span>{% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+      {% if counters or weak_against %}
+      <div class="ov-matchcol ov-match-bad">
+        <h4>Struggles Against</h4>
+        <ul class="ov-matchlist">
+          {% for s in (counters or weak_against)[:3] %}
+            <li>
+              {% if s.head %}<img src="{{ s.head }}" alt="{{ s.name }}" width="40" height="40" loading="lazy" decoding="async">{% endif %}
+              {% if s.slug %}<a href="{{ url_for('hero_page', slug=s.slug) }}">{{ s.name }}</a>{% else %}<span>{{ s.name }}</span>{% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+      {% if strong_against %}
+      <div class="ov-matchcol ov-match-good">
+        <h4>Strong Against</h4>
+        <ul class="ov-matchlist">
+          {% for s in strong_against[:3] %}
+            <li>
+              {% if s.head %}<img src="{{ s.head }}" alt="{{ s.name }}" width="40" height="40" loading="lazy" decoding="async">{% endif %}
+              <a href="{{ url_for('hero_page', slug=s.slug) }}">{{ s.name }}</a>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+    <p class="muted ov-matchnote">Full counter &amp; synergy analysis in the
+      {% if counters %}<a href="#counters" data-tab-link="counters">Counters</a>{% endif %}
+      {% if counters and synergies %} and {% endif %}
+      {% if synergies %}<a href="#synergy" data-tab-link="synergy">Synergy</a>{% endif %} tabs.
+    </p>
+  </div>
+  {% endif %}
+
+  {# ── Quick tips preview ── #}
+  {% if tips %}
+  <div class="ov-block">
+    <h3>Top 3 Tips for Playing {{ detail.name }}</h3>
+    <ol class="ov-tips">
+      {% for t in tips[:3] %}<li>{{ t }}</li>{% endfor %}
+    </ol>
+    <p class="muted"><a href="#tips" data-tab-link="tips">See all tips →</a></p>
+  </div>
+  {% endif %}
+
+  {# ── Lore ── #}
+  {% if detail.story %}
+  <div class="ov-block">
+    <h3>About {{ detail.name }}</h3>
+    <p class="lore">{{ detail.story }}</p>
+    {% if detail.tale and detail.tale != detail.story %}
+      <details class="ov-lore-more">
+        <summary>More lore</summary>
+        <p class="lore">{{ detail.tale }}</p>
+      </details>
+    {% endif %}
+  </div>
+  {% endif %}
+</section>
+
+<!-- ───────────── Skills + Combos ───────────── -->
+{% if detail.skills %}
+<section class="panel tab-panel" data-panel="skills" id="skills" role="tabpanel" aria-labelledby="tab-skills" hidden>
+  <h2>{{ detail.name }} Skills &amp; Abilities</h2>
+  <div class="skills-grid">
+    {% for s in detail.skills %}
+      <article class="skill-card">
+        <div class="skill-head">
+          {% if s.icon %}<img src="{{ s.icon }}" alt="{{ s.name }} icon"
+               width="52" height="52" loading="lazy" decoding="async">{% endif %}
+          <div>
+            <h3>{{ loop.index }}. {{ s.name }}</h3>
+            <div class="skill-tag-row">
+              {% for t in s.tags %}<span class="skill-tag">{{ t }}</span>{% endfor %}
+              {% if s.cd_cost %}<span class="skill-cd">{{ s.cd_cost }}</span>{% endif %}
+            </div>
+          </div>
+        </div>
+        <p class="skill-desc">{{ s.desc }}</p>
+      </article>
+    {% endfor %}
+  </div>
+  {% if detail.recommend_level %}
+    <p class="skill-order"><strong>Skill Order:</strong> Prioritise skills in this order —
+      {% for lvl in detail.recommend_level %}Skill {{ lvl }}{% if not loop.last %} → {% endif %}{% endfor %}.
+    </p>
+  {% endif %}
+
+  {% if combos %}
+  <h2 class="sub-h2">Best Skill Combos for {{ detail.name }}</h2>
+  {% for c in combos %}
+    <article class="combo-card">
+      <h3>{{ c.title }}</h3>
+      {% if c.icons %}
+        <div class="combo-sequence">
+          {% for icon in c.icons %}
+            <img src="{{ icon }}" alt="combo step {{ loop.index }}"
+                 width="52" height="52" loading="lazy" decoding="async">
+            {% if not loop.last %}<span class="combo-arrow">→</span>{% endif %}
+          {% endfor %}
+        </div>
+      {% endif %}
+      {% if c.desc %}<p>{{ c.desc }}</p>{% endif %}
+    </article>
+  {% endfor %}
+  {% endif %}
+</section>
+{% endif %}
+
+<!-- ───────────── Builds ───────────── -->
+{% if builds %}
+<section class="panel tab-panel" data-panel="builds" id="builds" role="tabpanel" aria-labelledby="tab-builds" hidden>
+  <div class="panel-head">
+    <h2>{{ detail.name }} Builds</h2>
+    <p class="muted">Community-ranked {{ detail.name }} builds, sorted by popularity. Each build was uploaded by a real player and is refreshed every 6 hours.</p>
+  </div>
+
+  <div class="build-feed">
+    {% for b in builds %}
+      <article class="build-card{% if loop.first %} is-top{% endif %}">
+        <header class="build-card-head">
+          <div class="build-title">
+            {% if loop.first %}<span class="badge-top">Most Popular</span>{% endif %}
+            <h3>{{ b.title }}</h3>
+          </div>
+          <ul class="build-meta">
+            {% if b.game_version %}<li>Patch {{ b.game_version }}</li>{% endif %}
+            {% if b.views %}<li>{{ '{:,}'.format(b.views) }} views</li>{% endif %}
+            {% if b.created_ms %}<li>{{ time_ago(b.created_ms) }}</li>{% endif %}
+          </ul>
+        </header>
+
+        {# ── Recommended Items (horizontal row, centered — MLBB.GG style) ── #}
+        {% for e in b.equips %}
+          {% if e.slots %}
+          <div class="bsection">
+            <div class="bsection-h">
+              {% if loop.length > 1 and e.title %}{{ e.title }}
+              {% else %}Recommended Items{% endif %}
+            </div>
+            <ul class="iconrow" role="list">
+              {% for it in e.slots %}
+                <li class="iconitem" title="{{ it.name }}">
+                  {% if it.icon %}
+                    <img src="{{ it.icon }}" alt="{{ it.name }}"
+                         width="56" height="56" loading="lazy" decoding="async">
+                  {% else %}
+                    <span class="iconitem-ph" aria-hidden="true">?</span>
+                  {% endif %}
+                  <span class="iconitem-tip">{{ it.name }}</span>
+                </li>
+              {% endfor %}
+            </ul>
+            {% if e.desc %}<p class="bsection-note">{{ e.desc }}</p>{% endif %}
+          </div>
+          {% endif %}
+        {% endfor %}
+
+        {# ── Spells ── #}
+        {% if b.spell and b.spell.icon %}
+        <div class="bsection">
+          <div class="bsection-h">Spells</div>
+          <ul class="iconrow" role="list">
+            <li class="iconitem" title="{{ b.spell.name }}{% if b.spell.shortdesc %} — {{ b.spell.shortdesc }}{% endif %}">
+              <img src="{{ b.spell.icon }}" alt="{{ b.spell.name }}"
+                   width="56" height="56" loading="lazy" decoding="async">
+              <span class="iconitem-tip">{{ b.spell.name }}{% if b.spell.shortdesc %} · {{ b.spell.shortdesc }}{% endif %}</span>
+            </li>
+          </ul>
+        </div>
+        {% endif %}
+
+        {# ── Emblem Talents ── #}
+        {% if b.emblems %}
+          {% for em in b.emblems %}
+            {% if em.gifts %}
+            <div class="bsection">
+              <div class="bsection-h">
+                Emblems{% if em.title %} — {{ em.title }}{% endif %}
+              </div>
+              <ul class="iconrow iconrow-sm" role="list">
+                {% for g in em.gifts %}
+                  <li class="iconitem" title="{{ g.name }}">
+                    {% if g.icon %}
+                      <img src="{{ g.icon }}" alt="{{ g.name }}"
+                           width="48" height="48" loading="lazy" decoding="async">
+                    {% else %}
+                      <span class="iconitem-ph" aria-hidden="true">?</span>
+                    {% endif %}
+                    <span class="iconitem-tip">{{ g.name }}</span>
+                  </li>
+                {% endfor %}
+              </ul>
+              {% if em.desc %}<p class="bsection-note">{{ em.desc }}</p>{% endif %}
+            </div>
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+
+        {# ── Snapshot (collapsible, optional reference) ── #}
+        {% if b.snapshot %}
+        <details class="build-snapshot-wrap">
+          <summary>View full MLBB in-game build image</summary>
+          <a class="build-snapshot" href="{{ b.snapshot }}" target="_blank" rel="noopener"
+             aria-label="Open full-size {{ b.title }} build image">
+            <img src="{{ b.snapshot }}" alt="{{ detail.name }} — {{ b.title }} build layout"
+                 loading="lazy" decoding="async" width="900" height="900">
+          </a>
+        </details>
+        {% endif %}
+
+        {% if b.recommend %}<p class="build-recommend">{{ b.recommend }}</p>{% endif %}
+
+        {% if b.spell.desc or b.emblems %}
+        <details class="build-details">
+          <summary>Build notes from the author</summary>
+          {% for e in b.equips %}
+            {% if e.desc and e.title %}
+            <p><strong>{{ e.title }}.</strong> {{ e.desc }}</p>
+            {% endif %}
+          {% endfor %}
+          {% for em in b.emblems %}
+            {% if em.title or em.desc %}
+            <p>
+              {% if em.title %}<strong>{{ em.title }}.</strong> {% endif %}
+              {% if em.desc %}{{ em.desc }}{% endif %}
+            </p>
+            {% endif %}
+          {% endfor %}
+          {% if b.spell.desc %}
+            <p><strong>Battle Spell.</strong> {{ b.spell.desc }}</p>
+          {% endif %}
+        </details>
+        {% endif %}
+      </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- ───────────── Counters ───────────── -->
+<section class="panel tab-panel" data-panel="counters" id="counters" role="tabpanel" aria-labelledby="tab-counters" hidden>
+  <h2>Heroes That Counter {{ detail.name }}</h2>
+  {% if counters %}
+    <p class="counter-legend">
+      Each counter is classified by how hard the matchup tilts:
+      <span class="cbadge cbadge-hard">Hard</span> kit-level suppression (+3% WR or more),
+      <span class="cbadge cbadge-soft">Soft</span> playable tilt (+1-3% WR),
+      <span class="cbadge cbadge-minor">Minor</span> slight edge only.
+      {% if counter_tally and counter_tally.hard %}
+        <strong>{{ counter_tally.hard }} hard counter{% if counter_tally.hard != 1 %}s{% endif %}</strong> in {{ detail.name }}'s top matchups this patch.
+      {% endif %}
+    </p>
+    <ul class="counter-list">
+      {% for c in counters %}
+        <li class="counter-row" data-strength="{{ c.strength }}" title="{{ c.strength_explain }}">
+          {% if c.slug %}
+            <a href="{{ url_for('hero_page', slug=c.slug) }}">
+              <img src="{{ c.head }}" alt="{{ c.name }}" width="48" height="48" loading="lazy" decoding="async">
+              <span class="cname">{{ c.name }}</span>
+            </a>
+          {% else %}
+            <img src="{{ c.head }}" alt="{{ c.name }}" width="48" height="48" loading="lazy" decoding="async"><span class="cname">{{ c.name }}</span>
+          {% endif %}
+          <span class="cinfo">
+            <span class="cbadge cbadge-{{ c.strength }}" aria-label="{{ c.strength_explain }}">
+              {% if c.strength == 'hard' %}Hard{% elif c.strength == 'soft' %}Soft{% else %}Minor{% endif %}
+            </span>
+            <span>WR {{ pct(c.win_rate, 1) }}</span>
+            <span class="bump">+{{ pct(c.increase, 1) }}</span>
+          </span>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="muted">No counter data available right now.</p>
+  {% endif %}
+
+  {% if weak_against %}
+    <h3 class="sub-h3">Struggles Against</h3>
+    <ul class="mini-hero-row">
+      {% for w in weak_against %}
+        <li><a href="{{ url_for('hero_page', slug=w.slug) }}">
+          <img src="{{ w.head }}" alt="{{ w.name }}" width="56" height="56" loading="lazy" decoding="async"><span>{{ w.name }}</span>
+        </a></li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</section>
+
+<!-- ───────────── Synergy ───────────── -->
+<section class="panel tab-panel" data-panel="synergy" id="synergy" role="tabpanel" aria-labelledby="tab-synergy" hidden>
+  <h2>Best Heroes With {{ detail.name }}</h2>
+  {% if synergies %}
+    <ul class="counter-list">
+      {% for s in synergies %}
+        <li class="counter-row">
+          {% if s.slug %}
+            <a href="{{ url_for('hero_page', slug=s.slug) }}">
+              <img src="{{ s.head }}" alt="{{ s.name }}" width="48" height="48" loading="lazy" decoding="async">
+              <span class="cname">{{ s.name }}</span>
+            </a>
+          {% else %}
+            <img src="{{ s.head }}" alt="{{ s.name }}" width="48" height="48" loading="lazy" decoding="async"><span class="cname">{{ s.name }}</span>
+          {% endif %}
+          <span class="cinfo">
+            <span>WR {{ pct(s.win_rate, 1) }}</span>
+            <span class="bump synergy">+{{ pct(s.increase, 1) }}</span>
+          </span>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="muted">No synergy data available right now.</p>
+  {% endif %}
+
+  {% if works_with %}
+    <h3 class="sub-h3">Hero Partners</h3>
+    <ul class="mini-hero-row">
+      {% for w in works_with %}
+        <li><a href="{{ url_for('hero_page', slug=w.slug) }}">
+          <img src="{{ w.head }}" alt="{{ w.name }}" width="56" height="56" loading="lazy" decoding="async"><span>{{ w.name }}</span>
+        </a></li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</section>
+
+<!-- ───────────── Tips ───────────── -->
+<section class="panel tab-panel" data-panel="tips" id="tips" role="tabpanel" aria-labelledby="tab-tips" hidden>
+  <h2>How to Play {{ detail.name }} — 5 Pro Tips</h2>
+  <ol class="tip-list">
+    {% for t in tips %}<li>{{ t }}</li>{% endfor %}
+  </ol>
+</section>
+
+<!-- ───────────── FAQ ───────────── -->
+{% if faqs %}
+<section class="panel tab-panel" data-panel="faq" id="faq" role="tabpanel" aria-labelledby="tab-faq" hidden>
+  <h2>{{ detail.name }} — Frequently Asked Questions</h2>
+  <p class="muted">Answers to the most common {{ detail.name }} questions from
+    the Singapore MLBB community.</p>
+  <div class="faq-list">
+    {% for f in faqs %}
+      <details class="faq-item"{% if loop.first %} open{% endif %}>
+        <summary>
+          <span class="faq-q">{{ f.q }}</span>
+          <span class="faq-chev" aria-hidden="true">▾</span>
+        </summary>
+        <p class="faq-a">{{ f.a }}</p>
+      </details>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+</div><!-- /.tab-panels -->
+
+<!-- Related pages / topical cluster — internal linking is the second-strongest
+     SEO lever after content depth. Every hero page ends by pointing Google
+     at its siblings (same role, same lane, the current meta overall). -->
+<section class="panel related-panel">
+  <h2>Related Guides for {{ detail.name }} Players</h2>
+  <div class="related-grid">
+    {% if role %}
+    <a class="related-card" href="{{ url_for('role_page', role=role|lower) }}"
+       style="--rc: {{ role_color(role) }}">
+      <span class="related-kicker">Role Tier List</span>
+      <span class="related-title">Best {{ role }}s in MLBB {{ CURRENT_MONTH }}</span>
+      <span class="related-desc">See how {{ detail.name }} ranks against every other {{ role|lower }} by live win rate.</span>
+    </a>
+    {% endif %}
+    {% for lane in (detail.lanes or [])[:2] %}
+      {% set lane_slug = lane | lower | replace(' lane', '') | replace(' ', '') %}
+      {% if lane_slug in LANE_META %}
+        <a class="related-card" href="{{ url_for('lane_page', lane=lane_slug) }}"
+           style="--rc: {{ LANE_META[lane_slug].color }}">
+          <span class="related-kicker">Lane Tier List</span>
+          <span class="related-title">Best {{ LANE_META[lane_slug].label }}s in MLBB {{ CURRENT_MONTH }}</span>
+          <span class="related-desc">{{ detail.name }} is a {{ lane }} pick. Compare against every hero who plays this lane.</span>
+        </a>
+      {% endif %}
+    {% endfor %}
+    <a class="related-card" href="{{ url_for('patch_notes_page') }}">
+      <span class="related-kicker">Patch Meta</span>
+      <span class="related-title">MLBB Meta Report — {{ CURRENT_MONTH }}</span>
+      <span class="related-desc">Is {{ detail.name }} a meta-definer this patch? Full ban/pick/hidden-OP breakdown.</span>
+    </a>
+    <a class="related-card" href="{{ url_for('tier_list_page') }}">
+      <span class="related-kicker">Full Tier List</span>
+      <span class="related-title">MLBB Tier List {{ CURRENT_MONTH }}</span>
+      <span class="related-desc">Every one of the {{ 132 }} MLBB heroes ranked SS through D by live win rate.</span>
+    </a>
+  </div>
+</section>
+
+<!-- SGS CTA -->
+<section class="panel cta-panel">
+  <h2>Find {{ detail.name }} Mains in Singapore</h2>
+  <p>Scrim {{ detail.name }} with real, verified players. Find teammates, practise combos and climb the rank ladder together.</p>
+  <div class="cta-buttons">
+    <a class="btn btn-primary btn-tg" href="{{ TELEGRAM_URL }}" target="_blank" rel="noopener" data-cta="hero-{{ detail.slug }}">
+      <span class="btn-shine" aria-hidden="true"></span>
+      <svg class="cta-icon" aria-hidden="true"><use href="#icon-tg"/></svg>
+      <span class="btn-label">Join Telegram &mdash; Free</span>
+      <span class="btn-spark" aria-hidden="true"></span>
+    </a>
+  </div>
+  <p class="cta-trust">Opens in Telegram &middot; No sign-up &middot; Leave anytime</p>
+</section>
+{% endblock %}

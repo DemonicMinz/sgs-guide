@@ -1,0 +1,20 @@
+[Unit]
+Description=SGS MLBB Hero Guide (Flask/Gunicorn)
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/srv/sgs_guide
+ExecStart=/srv/sgs_guide/run.sh
+Restart=always
+RestartSec=5
+KillSignal=SIGTERM
+TimeoutStopSec=20
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=sgs_guide
+
+[Install]
+WantedBy=multi-user.target

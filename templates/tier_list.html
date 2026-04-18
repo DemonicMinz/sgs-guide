@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block schema %}
+<!-- ItemList with every hero listed in rank order — enables the SERP carousel
+     rich result for "mlbb tier list" queries. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "@id": "{{ SITE_URL }}{{ canonical }}#tierlist",
+  "name": "MLBB Live Tier List 2026",
+  "description": "Every Mobile Legends hero ranked by live 7-day win rate across Epic, Legend, Mythic and Mythic Glory.",
+  "numberOfItems": {{ total }},
+  "inLanguage": "{{ LANG_TAG }}",
+  "itemListOrder": "https://schema.org/ItemListOrderDescending",
+  "isPartOf": { "@id": "{{ SITE_URL }}/#website" },
+  "itemListElement": [
+    {% set ns = namespace(pos=0) %}
+    {% for letter in ['SS','S','A','B','C','D'] %}
+      {% for h in buckets[letter] %}
+        {% set ns.pos = ns.pos + 1 %}
+        {
+          "@type": "ListItem",
+          "position": {{ ns.pos }},
+          "url": "{{ SITE_URL }}/hero/{{ h.slug }}",
+          "name": "{{ h.name }} (Tier {{ letter }})",
+          "image": "{{ h.head }}"
+        }{% if not (letter == 'D' and loop.last) %},{% endif %}
+      {% endfor %}
+    {% endfor %}
+  ]
+}
+</script>
+
+<!-- Breadcrumb -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "{{ SITE_URL }}/" },
+    { "@type": "ListItem", "position": 2, "name": "Tier List", "item": "{{ SITE_URL }}{{ canonical }}" }
+  ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <h1>MLBB Tier List 2026 — Live Win Rates</h1>
+  <p>Ranked straight from match data across {{ total }} heroes.
+     SS-tier heroes are meta-defining with 54%+ win rates.
+     Updated {{ updated }}.</p>
+  <div class="filter-wrap">
+    {% for r in ['all','epic','legend','mythic','honor','glory'] %}
+      <a class="filter-btn {% if rank == r %}active{% endif %}"
+         href="{{ url_for('tier_list_page') }}?rank={{ r }}">{{ r|capitalize }}</a>
+    {% endfor %}
+  </div>
+</section>
+
+{% set tier_config = [
+  ('SS', '#ff4d6d', 'Meta-Defining',   'Above 54% win rate — dominant picks, first-pick or ban worthy.'),
+  ('S',  '#FFD700', 'Dominant',        '52–54% win rate — extremely strong this patch.'),
+  ('A',  '#9c88ff', 'Strong',          '50–52% win rate — reliable, high-performing heroes.'),
+  ('B',  '#70a1ff', 'Balanced',        '48–50% win rate — solid picks when played well.'),
+  ('C',  '#c0c0c0', 'Situational',     '46–48% win rate — niche or requires specific comps.'),
+  ('D',  '#808080', 'Struggling',      'Below 46% win rate — currently underperforming.')
+] %}
+{% for letter, color, label, desc in tier_config %}
+  <section class="tier-section tier-{{ letter|lower }}" style="--tier-color: {{ color }}">
+    <h2>
+      <span class="tier-letter">{{ letter }}</span>
+      <span class="tier-label">
+        <span class="tier-label-main">Tier — {{ label }}</span>
+        <span class="tier-label-desc">{{ desc }}</span>
+      </span>
+      <span class="tier-count">{{ buckets[letter]|length }} heroes</span>
+    </h2>
+    <div class="tier-row">
+      {% for h in buckets[letter] %}
+        <a class="tier-card" href="{{ url_for('hero_page', slug=h.slug) }}" title="{{ h.name }} — WR {{ pct(h.win_rate) }}">
+          <img src="{{ h.head }}" alt="{{ h.name }}" width="88" height="88"
+               loading="lazy" decoding="async">
+          <span class="tc-name">{{ h.name }}</span>
+          <span class="tc-wr">{{ pct(h.win_rate, 1) }}</span>
+        </a>
+      {% else %}
+        <p class="muted">No heroes in this tier right now.</p>
+      {% endfor %}
+    </div>
+  </section>
+{% endfor %}
+
+<!-- Cross-linking block: role landing pages. Boosts internal PageRank flow
+     and gives crawlers entry points to the new role/* content. -->
+<section class="panel">
+  <h2>Browse by Role</h2>
+  <p class="muted">Every MLBB hero sorted by class — each role page has its
+    own live tier list, top-10, and matchup breakdown.</p>
+  <ul class="role-link-grid">
+    {% for role_name, color in ROLE_COLORS.items() %}
+      <li>
+        <a class="role-link" href="{{ url_for('role_page', role=role_name|lower) }}"
+           style="--rc: {{ color }}">
+          <span class="role-link-name">Best {{ role_name }}s</span>
+          <span class="role-link-arrow" aria-hidden="true">→</span>
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

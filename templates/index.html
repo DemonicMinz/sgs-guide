@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+
+{% block schema %}
+<!-- CollectionPage + ItemList: proves to Google that this is a curated index
+     of related content (Mobile Legends heroes), not a thin landing page. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "@id": "{{ SITE_URL }}/#collection",
+  "name": "{{ page_title }}",
+  "description": {{ page_desc | tojson }},
+  "url": "{{ SITE_URL }}/",
+  "inLanguage": "{{ LANG_TAG }}",
+  "isPartOf": { "@id": "{{ SITE_URL }}/#website" },
+  "publisher": { "@id": "{{ SITE_URL }}/#organization" },
+  "about": {
+    "@type": "VideoGame",
+    "name": "Mobile Legends: Bang Bang",
+    "alternateName": ["MLBB", "Mobile Legends"],
+    "applicationCategory": "GameApplication",
+    "gamePlatform": ["Android", "iOS"]
+  },
+  "mainEntity": {
+    "@type": "ItemList",
+    "name": "All MLBB heroes indexed on SGS",
+    "numberOfItems": {{ heroes|length }},
+    "itemListElement": [
+      {% for h in top_meta[:10] %}
+      {
+        "@type": "ListItem",
+        "position": {{ loop.index }},
+        "url": "{{ SITE_URL }}/hero/{{ h.slug }}",
+        "name": "{{ h.name }}",
+        "image": "{{ h.head }}"
+      }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ]
+  }
+}
+</script>
+
+<!-- FAQ for the homepage — targets head-term queries like "what is the best
+     MLBB hero" / "how often is tier list updated". -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Who are the best MLBB heroes in 2026?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The top heroes by current win rate are {% for h in top_meta[:5] %}{{ h.name }}{% if not loop.last %}, {% endif %}{% endfor %}. Our live tier list refreshes every 6 hours from real ranked match data, so the top-10 on this page always reflects the current Mobile Legends meta."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How often is the SGS MLBB tier list updated?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The tier list and every hero page update every 6 hours from live match statistics. You can see the 'last updated' timestamp at the top of every page."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I join the SGS Singapore MLBB community?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Click any Join Telegram button on this site. SGS is Singapore's largest verified Mobile Legends community — daily scrims from Epic to Mythic Glory, no smurfs, no toxics. Free to join."
+      }
+    }
+  ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="hero-banner">
+  <div class="hero-banner-inner">
+    <h1>Mobile Legends Tier List &amp; Hero Guides <span class="year">{{ CURRENT_MONTH }}</span></h1>
+    <p>Live tier list, meta analysis and hero guides for <strong>{{ heroes|length }} Mobile Legends heroes</strong> &mdash; powered by real ranked match data, refreshed every 6 hours. Built for the Singapore grind.</p>
+    <div class="search-wrap">
+      <input id="hero-search" type="search" placeholder="Search hero — Gusion, Layla, Fanny …"
+             autocomplete="off" aria-label="Search heroes">
+    </div>
+    <div class="filter-wrap" id="role-filter">
+      <button class="filter-btn active" data-role="all">All</button>
+      {% for role, color in ROLE_COLORS.items() %}
+        <button class="filter-btn" data-role="{{ role|lower }}" style="--rc: {{ color }}">
+          {{ role }}
+        </button>
+      {% endfor %}
+    </div>
+    <p class="updated-line">
+      <span class="updated-badge">Last updated <time datetime="{{ TODAY_ISO }}">{{ UPDATED_HUMAN }}</time></span>
+      &middot; {{ heroes|length }} heroes indexed &middot; live stats refreshed {{ updated }}
+    </p>
+  </div>
+</section>
+
+{% if trending %}
+<!-- Trending this patch: ban-rate driven. This is the single strongest market
+     signal for which heroes are breaking the meta — high-ranking MLBB sites
+     (BitTopup, mlbbmeta.com) lead with this data above everything else. -->
+<section class="trending-strip">
+  <h2>Trending This Patch — Most Banned Heroes</h2>
+  <p class="muted">The heroes ranked players consistently remove from the pick pool. High ban rate is the clearest sign of a hero being feared — or outright broken — in the current meta.</p>
+  <div class="trending-row">
+    {% for h in trending %}
+      <a class="trending-card" href="{{ url_for('hero_page', slug=h.slug) }}">
+        <span class="trend-rank">#{{ loop.index }}</span>
+        <img src="{{ h.head }}" alt="{{ h.name }} — MLBB trending {{ (h.role or '') | lower }}"
+             width="56" height="56"
+             {% if loop.index <= 3 %}fetchpriority="high"{% else %}loading="lazy"{% endif %}
+             decoding="async">
+        <div class="trend-body">
+          <span class="trend-name">{{ h.name }}</span>
+          {% if h.role %}<span class="trend-role">{{ h.role }}</span>{% endif %}
+          <span class="trend-ban">Ban {{ pct(h.ban_rate, 1) }}</span>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+  <p class="trending-footnote muted">
+    Want the full breakdown? Jump to the
+    <a href="{{ url_for('patch_notes_page') }}">patch-notes meta report</a>
+    for pick priorities, hidden-OP picks and struggling heroes this patch.
+  </p>
+</section>
+{% endif %}
+
+<section class="meta-strip">
+  <h2>Current Meta — Top 10 by Win Rate</h2>
+  <div class="meta-row">
+    {% for h in top_meta %}
+      <a class="meta-chip" href="{{ url_for('hero_page', slug=h.slug) }}" title="{{ h.name }}">
+        <img src="{{ h.head }}" alt="{{ h.name }}"
+             width="44" height="44" decoding="async"
+             {% if loop.index <= 6 %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>
+        <div class="meta-chip-body">
+          <span class="meta-chip-name">{{ h.name }}</span>
+          <span class="meta-chip-wr tier-{{ h.tier }}">{{ pct(h.win_rate) }}</span>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- Role browse grid — internal-linking booster for /role/* landing pages. -->
+<section class="role-browse">
+  <h2>Browse Heroes by Role</h2>
+  <p class="muted">Every Mobile Legends class has its own live tier list, top-picks and meta breakdown.</p>
+  <ul class="role-link-grid">
+    {% for role_name, color in ROLE_COLORS.items() %}
+      <li>
+        <a class="role-link" href="{{ url_for('role_page', role=role_name|lower) }}"
+           style="--rc: {{ color }}">
+          <span class="role-link-name">Best {{ role_name }}s</span>
+          <span class="role-link-arrow" aria-hidden="true">→</span>
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+</section>
+
+<!-- Lane browse grid — complements /role/ with the other axis SEA gamers
+     actually search for ("best jungler 2026", "mid lane tier list"). -->
+<section class="role-browse">
+  <h2>Browse Heroes by Lane</h2>
+  <p class="muted">Five canonical MLBB lanes — each with its own live tier list and recommended 3-hero pool.</p>
+  <ul class="role-link-grid">
+    {% for slug, meta in LANE_META.items() %}
+      <li>
+        <a class="role-link" href="{{ url_for('lane_page', lane=slug) }}"
+           style="--rc: {{ meta.color }}">
+          <span class="role-link-name">Best {{ meta.label }}s</span>
+          <span class="role-link-arrow" aria-hidden="true">→</span>
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+</section>
+
+<section class="hero-grid-section">
+  <h2>All Heroes</h2>
+  <div class="hero-grid" id="hero-grid">
+    {% for h in heroes %}
+      <a class="hero-card" href="{{ url_for('hero_page', slug=h.slug) }}"
+         data-name="{{ h.name|lower }}"
+         data-slug="{{ h.slug }}"
+         data-role="{{ (h.role or '')|lower }}">
+        <div class="hero-card-img">
+          <img src="{{ h.head }}" alt="{{ h.name }} MLBB hero portrait"
+               width="160" height="160" loading="lazy" decoding="async">
+          {% if h.tier %}<span class="tier-pill tier-{{ h.tier }}">{{ h.tier }}</span>{% endif %}
+        </div>
+        <div class="hero-card-body">
+          <span class="hero-name">{{ h.name }}</span>
+          {% if h.win_rate is defined and h.win_rate is not none %}
+            <span class="hero-wr">WR {{ pct(h.win_rate, 1) }}</span>
+          {% endif %}
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+  <p class="empty-state" id="empty-state" hidden>No heroes match that search.</p>
+</section>
+
+<!-- Evergreen content block — gives Google more crawlable copy and anchors
+     the Singapore + MLBB topic association. -->
+<section class="panel intro-panel">
+  <h2>What is Singapore Gaming Syndicate?</h2>
+  <p>Singapore Gaming Syndicate (SGS) is Singapore's biggest verified Mobile Legends community. We run daily scrims, publish this live hero guide, and help local MLBB players find teammates at every rank &mdash; from Epic through Mythic Glory.</p>
+  <p>Every hero page on this site is generated from real ranked match data: live win rate, pick rate, ban rate, counter matchups, synergy partners, skill combos, and the community's highest-voted builds. Stats refresh every 6 hours so you're never reading a stale guide. If you want to practise what you read, <a href="{{ TELEGRAM_URL }}" target="_blank" rel="noopener">join the SGS Telegram group</a> &mdash; free, no sign-up, verified members only.</p>
+</section>
+
+<!-- E-E-A-T (Experience / Expertise / Authoritativeness / Trustworthiness) —
+     Google's 2026 ranking algorithm heavily weights transparent data
+     provenance for gaming/YMYL content. This is the single highest-leverage
+     content block on the page for ranking in competitive SERPs. -->
+<section class="panel data-transparency" id="about-data">
+  <h2>About This Data</h2>
+  <div class="dt-grid">
+    <div class="dt-col">
+      <h3>Source of Truth</h3>
+      <p>Every win-rate, pick-rate and ban-rate figure on this site is pulled from the <strong>OpenMLBB API</strong> — a public aggregation of Mobile Legends ranked match data across all tiers from Epic to Mythic Glory. We do not manually curate tier lists. Rankings emerge from real player behaviour in the last <strong>7 days</strong>.</p>
+    </div>
+    <div class="dt-col">
+      <h3>Update Frequency</h3>
+      <p>Upstream stats refresh every <strong>6 hours</strong>, with a 12-hour graceful fallback if the API is unreachable. Every page shows a <em>"Last updated"</em> badge with an exact timestamp &mdash; always check it. If the badge shows more than 12 hours old, the data is from our cold cache and the live API is likely down.</p>
+      {% if PATCH_WINDOW and PATCH_WINDOW.as_of %}
+      <p class="dt-cutoff">
+        <strong>Current patch window:</strong>
+        {% if PATCH_WINDOW.env_patch %}MLBB {{ PATCH_WINDOW.label }} &middot;{% endif %}
+        data current through
+        <time datetime="{{ PATCH_WINDOW.as_of }}"><strong>{{ PATCH_WINDOW.as_of_human }}</strong></time>
+        ({{ DATA_FRESHNESS.human }}).
+      </p>
+      {% endif %}
+    </div>
+    <div class="dt-col">
+      <h3>Why Trust Us?</h3>
+      <p>SGS is maintained by <strong>active Mythic-rank Singapore players</strong>. All build recommendations, skill-order advice and 3-hero pool calls are reviewed against the live data and the Mobile Legends pro scene (MPL-SG, MSC). No AI-hallucinated builds, no affiliate-driven hero rankings, no hype cycles &mdash; just the numbers and the experience to interpret them.</p>
+    </div>
+    <div class="dt-col">
+      <h3>Methodology</h3>
+      <ul class="dt-method">
+        <li><strong>Tier split:</strong> SS ≥54% WR, S ≥52%, A ≥50%, B ≥48%, C ≥46%, D &lt;46%.</li>
+        <li><strong>Counter strength:</strong> Hard +3% WR boost, Soft +1-3%, Minor &lt;1%.</li>
+        <li><strong>3-hero pool:</strong> comfort (highest pick), counter (high WR + low pick), safe blind (highest WR in top-5 most-picked).</li>
+        <li><strong>Trending:</strong> sorted by current ban rate &mdash; the cleanest proxy for perceived strength.</li>
+      </ul>
+    </div>
+  </div>
+  <p class="dt-footer muted">
+    Last methodology review: <time datetime="{{ TODAY_ISO }}">{{ UPDATED_HUMAN }}</time>.
+    This page is <strong>auto-regenerated every 6 hours</strong> &mdash; there is no manual editorial step between the raw API data and what you see.
+  </p>
+</section>
+{% endblock %}

@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block schema %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "@id": "{{ SITE_URL }}{{ canonical }}#article",
+  "headline": "{{ page_title }}",
+  "description": {{ page_desc | tojson }},
+  "url": "{{ SITE_URL }}{{ canonical }}",
+  "inLanguage": "{{ LANG_TAG }}",
+  "datePublished": "{{ TODAY_ISO }}",
+  "dateModified": "{{ TODAY_ISO }}",
+  "author":    { "@id": "{{ SITE_URL }}/#organization" },
+  "publisher": { "@id": "{{ SITE_URL }}/#organization" },
+  "isPartOf":  { "@id": "{{ SITE_URL }}/#website" },
+  "about": {
+    "@type": "VideoGame",
+    "name": "Mobile Legends: Bang Bang",
+    "applicationCategory": "GameApplication"
+  },
+  "mainEntityOfPage": { "@id": "{{ SITE_URL }}{{ canonical }}#article" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is the current MLBB meta this patch?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The current MLBB {{ patch_label }} meta is dominated by {{ meta_definers|length }} meta-defining heroes with 54%+ win rates{% if meta_definers %}, led by {{ meta_definers[0].name }} at {{ pct(meta_definers[0].win_rate, 1) }}{% endif %}. See the full list below — refreshed every 6 hours from real ranked games."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Which MLBB heroes are most banned this patch?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The top ban priorities right now are {% for h in by_ban[:3] %}{{ h.name }} ({{ pct(h.ban_rate, 1) }}){% if not loop.last %}, {% endif %}{% endfor %}. These are the heroes high-rank players consistently remove from the pick pool."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Are there any hidden OP heroes in the current MLBB patch?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "{% if under_radar %}Yes — {% for h in under_radar[:3] %}{{ h.name }} ({{ pct(h.win_rate, 1) }} WR, only {{ pct(h.pick_rate, 2) }} pick rate){% if not loop.last %}, {% endif %}{% endfor %}. These are heroes with strong win rates but very low pick rates, meaning most players haven't caught on yet.{% else %}No stand-out hidden picks this patch — the meta is well-explored and the top-WR heroes match the top-pick list.{% endif %}"
+      }
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "{{ SITE_URL }}/" },
+    { "@type": "ListItem", "position": 2, "name": "Patch Notes", "item": "{{ SITE_URL }}{{ canonical }}" }
+  ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="{{ url_for('index') }}">Heroes</a>
+  <span class="sep">/</span>
+  <span>Patch Notes</span>
+</nav>
+
+<section class="page-head">
+  <h1>MLBB {{ patch_label }} — Meta Report for {{ CURRENT_MONTH }}</h1>
+  <p>
+    A data-driven patch digest: meta-definers, ban priorities, under-the-radar
+    picks and struggling heroes. No opinion pieces — every number below is
+    real 7-day ranked data from {{ total_heroes }} heroes across all tiers.
+  </p>
+  <p class="updated-line">
+    <span class="updated-badge">Last updated <time datetime="{{ TODAY_ISO }}">{{ UPDATED_HUMAN }}</time></span>
+    &middot; {{ updated }}
+    {% if patch_tag %}&middot; MLBB client patch <strong>{{ patch_tag }}</strong>{% endif %}
+    {% if PATCH_WINDOW and PATCH_WINDOW.as_of %}
+      &middot; data current through
+      <time datetime="{{ PATCH_WINDOW.as_of }}"><strong>{{ PATCH_WINDOW.as_of_human }}</strong></time>
+    {% endif %}
+  </p>
+</section>
+
+{% if meta_definers %}
+<section class="panel">
+  <h2>Meta Definers — SS-Tier Heroes (54%+ Win Rate)</h2>
+  <p class="muted">
+    These are the heroes fundamentally warping {{ CURRENT_MONTH }}'s meta —
+    their kits are over-tuned for the current patch. Expect nerfs soon; in the
+    meantime, they're the single highest-value picks in drafts.
+  </p>
+  <ol class="meta-list patch-big-list">
+    {% for h in meta_definers %}
+      <li>
+        <a href="{{ url_for('hero_page', slug=h.slug) }}">
+          <img src="{{ h.head }}" alt="{{ h.name }} — MLBB meta-defining hero"
+               width="48" height="48"
+               decoding="async" {% if loop.index <= 3 %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>
+          <span class="mn">
+            <span>{{ h.name }}</span>
+            {% if h.role %}<span class="patch-tag">{{ h.role }}</span>{% endif %}
+          </span>
+          <span class="mv tier-{{ h.tier }}">{{ pct(h.win_rate, 1) }}</span>
+        </a>
+      </li>
+    {% endfor %}
+  </ol>
+</section>
+{% else %}
+<section class="panel">
+  <h2>Balanced Patch — No SS-Tier Outliers</h2>
+  <p>
+    No hero currently exceeds the 54% win-rate threshold. This is a rare
+    signal of a genuinely balanced patch — any of the top-20 heroes are
+    viable picks. Focus your {{ CURRENT_MONTH }} climb on personal comfort,
+    not meta-chasing.
+  </p>
+</section>
+{% endif %}
+
+<section class="meta-grid">
+  <div class="meta-col">
+    <h2>Pick Priorities</h2>
+    <p class="muted">What Mythic-rank players are spamming most this patch.</p>
+    <ol class="meta-list">
+      {% for h in by_pick %}
+        <li>
+          <a href="{{ url_for('hero_page', slug=h.slug) }}">
+            <img src="{{ h.head }}" alt="{{ h.name }}" width="40" height="40" loading="lazy" decoding="async">
+            <span class="mn">{{ h.name }}</span>
+            <span class="mv">{{ pct(h.pick_rate, 2) }}</span>
+          </a>
+        </li>
+      {% endfor %}
+    </ol>
+  </div>
+
+  <div class="meta-col">
+    <h2>Ban Priorities</h2>
+    <p class="muted">The heroes you should be first-banning in ranked draft.</p>
+    <ol class="meta-list">
+      {% for h in by_ban %}
+        <li>
+          <a href="{{ url_for('hero_page', slug=h.slug) }}">
+            <img src="{{ h.head }}" alt="{{ h.name }}" width="40" height="40" loading="lazy" decoding="async">
+            <span class="mn">{{ h.name }}</span>
+            <span class="mv">{{ pct(h.ban_rate, 1) }}</span>
+          </a>
+        </li>
+      {% endfor %}
+    </ol>
+  </div>
+
+  <div class="meta-col">
+    <h2>Under the Radar</h2>
+    <p class="muted">High WR, low pick rate — pool these for surprise value.</p>
+    {% if under_radar %}
+    <ol class="meta-list">
+      {% for h in under_radar %}
+        <li>
+          <a href="{{ url_for('hero_page', slug=h.slug) }}">
+            <img src="{{ h.head }}" alt="{{ h.name }}" width="40" height="40" loading="lazy" decoding="async">
+            <span class="mn">
+              <span>{{ h.name }}</span>
+              <span class="patch-tag patch-tag-muted">pick {{ pct(h.pick_rate, 2) }}</span>
+            </span>
+            <span class="mv tier-{{ h.tier }}">{{ pct(h.win_rate, 1) }}</span>
+          </a>
+        </li>
+      {% endfor %}
+    </ol>
+    {% else %}
+    <p class="muted">No hidden gems this patch — the meta is fully explored.</p>
+    {% endif %}
+  </div>
+</section>
+
+{% if struggling %}
+<section class="panel">
+  <h2>Struggling Heroes — Avoid or Coach-Buff-Bait</h2>
+  <p class="muted">
+    Bottom-of-the-barrel win rates this patch. Safe to ban-phase ignore,
+    dangerous to first-pick. If you main any of these, consider a flex pool
+    until Moonton ships a buff.
+  </p>
+  <ol class="meta-list patch-struggling">
+    {% for h in struggling %}
+      <li>
+        <a href="{{ url_for('hero_page', slug=h.slug) }}">
+          <img src="{{ h.head }}" alt="{{ h.name }}" width="40" height="40" loading="lazy" decoding="async">
+          <span class="mn">{{ h.name }}</span>
+          <span class="mv tier-{{ h.tier }}">{{ pct(h.win_rate, 1) }}</span>
+        </a>
+      </li>
+    {% endfor %}
+  </ol>
+</section>
+{% endif %}
+
+<section class="panel">
+  <h2>How This Report Is Built</h2>
+  <p>
+    Every hero stat on this page is a 7-day rolling average from ranked
+    Mobile Legends matches — all tiers from Epic to Mythic Glory — pulled
+    live from the OpenMLBB API and re-cached every 6 hours.
+    <strong>No editorial opinions, no hype, no patch-chasing clickbait.</strong>
+  </p>
+  <p>
+    Looking for the full picture? Dive into the
+    <a href="{{ url_for('tier_list_page') }}">full SS-D tier list</a>,
+    a specific <a href="{{ url_for('role_page', role='tank') }}">role page</a>,
+    or a <a href="{{ url_for('lane_page', lane='jungle') }}">lane page</a>
+    — all built from the same live data.
+  </p>
+  <p class="muted">
+    Source of truth for official balance changes: Moonton in-game "Balance
+    Adjustment" notes (updated with each client patch).
+  </p>
+</section>
+{% endblock %}
