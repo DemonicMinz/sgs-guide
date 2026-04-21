@@ -2267,10 +2267,9 @@ def robots() -> Response:
 
 @app.route("/ads.txt")
 def ads_txt() -> Response:
-    # Placeholder — replace with real publisher line when AdSense is approved.
+    # Authorized Digital Sellers — declares Google AdSense as a direct seller.
     return Response(
-        "# SGS ads.txt\n"
-        "# google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0\n",
+        "google.com, pub-3287033837149583, DIRECT, f08c47fec0942fa0\n",
         mimetype="text/plain",
     )
 
