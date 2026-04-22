@@ -9,7 +9,7 @@
     <div class="cta-buttons" style="justify-content: center; display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px;">
       <a class="btn btn-primary" href="{{ url_for('index') }}">Browse Heroes</a>
       <a class="btn btn-secondary" href="{{ url_for('tier_list_page') }}">Tier List</a>
-      <a class="btn btn-primary btn-tg" href="{{ TELEGRAM_URL }}" target="_blank" rel="noopener" data-cta="404">
+      <a class="btn btn-primary btn-tg" href="{{ TELEGRAM_URL }}" target="_blank" rel="noopener" data-cta="404" onclick="return gtag_report_conversion('{{ TELEGRAM_URL }}');">
         <span class="btn-shine" aria-hidden="true"></span>
         <svg class="cta-icon" aria-hidden="true"><use href="#icon-tg"/></svg>
         <span class="btn-label">Join Telegram</span>

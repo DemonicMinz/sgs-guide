@@ -724,7 +724,7 @@
   <h2>Find {{ detail.name }} Mains in Singapore</h2>
   <p>Scrim {{ detail.name }} with real, verified players. Find teammates, practise combos and climb the rank ladder together.</p>
   <div class="cta-buttons">
-    <a class="btn btn-primary btn-tg" href="{{ TELEGRAM_URL }}" target="_blank" rel="noopener" data-cta="hero-{{ detail.slug }}">
+    <a class="btn btn-primary btn-tg" href="{{ TELEGRAM_URL }}" target="_blank" rel="noopener" data-cta="hero-{{ detail.slug }}" onclick="return gtag_report_conversion('{{ TELEGRAM_URL }}');">
       <span class="btn-shine" aria-hidden="true"></span>
       <svg class="cta-icon" aria-hidden="true"><use href="#icon-tg"/></svg>
       <span class="btn-label">Join Telegram &mdash; Free</span>

@@ -10,6 +10,22 @@
   gtag('config', 'AW-18110060009');
 </script>
 
+<!-- Event snippet for Telegram Click conversion -->
+<script>
+function gtag_report_conversion(url) {
+  var callback = function () {
+    if (typeof(url) != 'undefined') {
+      window.location = url;
+    }
+  };
+  gtag('event', 'conversion', {
+      'send_to': 'AW-18110060009/i9m9CNCSs6AcEOmrxrtD',
+      'event_callback': callback
+  });
+  return false;
+}
+</script>
+
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0f">
@@ -203,7 +219,7 @@
       <a href="{{ url_for('patch_notes_page') }}"{% if request.endpoint == 'patch_notes_page' %} aria-current="page"{% endif %}>Patch Notes</a>
       <a href="{{ url_for('about_page') }}"{% if request.endpoint == 'about_page' %} aria-current="page"{% endif %}>About</a>
     </nav>
-    <a class="header-cta" href="{{ TELEGRAM_URL }}" target="_blank" rel="noopener" data-cta="header">
+    <a class="header-cta" href="{{ TELEGRAM_URL }}" target="_blank" rel="noopener" data-cta="header" onclick="return gtag_report_conversion('{{ TELEGRAM_URL }}');">
       <svg class="cta-icon" aria-hidden="true"><use href="#icon-tg"/></svg>
       <span class="header-cta-full">Join Telegram</span>
       <span class="header-cta-short">Join</span>
@@ -246,7 +262,7 @@
     </div>
     <div class="cta-actions">
       <div class="cta-buttons">
-        <a class="btn btn-primary btn-tg" href="{{ TELEGRAM_URL }}" target="_blank" rel="noopener" data-cta="footer">
+        <a class="btn btn-primary btn-tg" href="{{ TELEGRAM_URL }}" target="_blank" rel="noopener" data-cta="footer" onclick="return gtag_report_conversion('{{ TELEGRAM_URL }}');">
           <span class="btn-shine" aria-hidden="true"></span>
           <svg class="cta-icon" aria-hidden="true"><use href="#icon-tg"/></svg>
           <span class="btn-label">Join Telegram &mdash; Free</span>
@@ -268,7 +284,7 @@
       <a href="{{ url_for('meta_page') }}">Meta</a> ·
       <a href="{{ url_for('patch_notes_page') }}">Patch Notes</a> ·
       <a href="{{ url_for('about_page') }}">About</a> ·
-      <a href="{{ TELEGRAM_URL }}" target="_blank" rel="noopener">Telegram</a>
+      <a href="{{ TELEGRAM_URL }}" target="_blank" rel="noopener" onclick="return gtag_report_conversion('{{ TELEGRAM_URL }}');">Telegram</a>
     </p>
     <p class="foot-note">Hero stats provided by the OpenMLBB community API, cached every 6 hours.
       Data last refreshed {{ updated or 'moments ago' }}.</p>
@@ -276,7 +292,8 @@
 </footer>
 
 <a class="sticky-cta" href="{{ TELEGRAM_URL }}" target="_blank" rel="noopener"
-   data-cta="sticky" aria-label="Join the SGS Telegram community">
+   data-cta="sticky" aria-label="Join the SGS Telegram community"
+   onclick="return gtag_report_conversion('{{ TELEGRAM_URL }}');">
   <span class="btn-shine" aria-hidden="true"></span>
   <svg class="cta-icon" aria-hidden="true"><use href="#icon-tg"/></svg>
   <span>Join Telegram</span>
