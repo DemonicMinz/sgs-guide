@@ -33,7 +33,7 @@
     serverId: "",
     playerName: "",
     verified: false,
-    region: "br",
+    region: "my",
     category: "diamonds",
     selectedPkg: null,
     packages: null,
