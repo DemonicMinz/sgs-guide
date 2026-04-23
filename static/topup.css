@@ -1,0 +1,587 @@
+/* --------------------------------------------------------------- */
+/*  SGS Top-Up Store Styles — extends main style.css               */
+/* --------------------------------------------------------------- */
+
+/* ---------- Trust badges ---------- */
+.topup-trust-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+.trust-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(255, 215, 0, 0.10);
+  border: 1px solid rgba(255, 215, 0, 0.25);
+  color: var(--gold);
+  font-size: .82rem;
+  font-weight: 600;
+}
+.trust-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+/* ---------- How it works ---------- */
+.topup-how h2 { margin-bottom: 16px; }
+.how-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+.how-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 18px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+}
+.how-step .step-num {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--gold);
+  color: #0a0a0f;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin-bottom: 10px;
+}
+.how-step strong {
+  color: #fff;
+  font-size: .95rem;
+  margin-bottom: 4px;
+}
+.how-step .step-desc {
+  font-size: .82rem;
+  color: var(--text-dim);
+}
+
+/* ---------- Game cards grid ---------- */
+.topup-games-section { margin: 28px 0 36px; }
+.topup-games-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+.topup-game-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  color: var(--text);
+  transition: transform .15s ease, border-color .15s ease, background .15s ease;
+  text-decoration: none;
+}
+.topup-game-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--border-hi);
+  background: var(--card-hover);
+  color: var(--text);
+}
+.topup-game-card.coming-soon {
+  opacity: 0.55;
+  pointer-events: none;
+}
+.topup-game-img {
+  position: relative;
+  aspect-ratio: 1/1;
+  background: var(--bg-3);
+  overflow: hidden;
+}
+.topup-game-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.topup-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.topup-badge.popular {
+  background: var(--gold);
+  color: #0a0a0f;
+}
+.topup-badge.soon {
+  background: rgba(0,0,0,0.65);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+}
+.topup-game-body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.topup-game-body h3 {
+  font-size: .95rem;
+  margin: 0;
+  color: #fff;
+}
+.topup-game-desc {
+  font-size: .82rem;
+  color: var(--text-dim);
+  margin: 0;
+}
+.topup-game-price {
+  font-size: .88rem;
+  color: var(--text);
+}
+.topup-game-price strong {
+  color: var(--gold);
+  font-weight: 700;
+}
+.topup-game-delivery {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: .78rem;
+  color: var(--ok);
+  font-weight: 600;
+}
+
+/* ---------- Product hero ---------- */
+.topup-product-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 0.5fr) minmax(0, 1fr);
+  gap: 24px;
+  background:
+    linear-gradient(135deg, rgba(255,215,0,0.06), transparent 60%),
+    var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  margin: 16px 0 24px;
+}
+.topup-product-hero-img {
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--bg-3);
+}
+.topup-product-hero-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.topup-product-hero-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.topup-product-hero-body p {
+  color: var(--text-dim);
+  margin: 6px 0 0;
+}
+@media (max-width: 640px) {
+  .topup-product-hero {
+    grid-template-columns: 1fr;
+  }
+  .topup-product-hero-img {
+    max-height: 180px;
+  }
+}
+
+/* ---------- Steps ---------- */
+.topup-step { margin-bottom: 16px; }
+.step-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.step-header .step-num {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--gold);
+  color: #0a0a0f;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+.step-header h2 { margin: 0; }
+
+/* ---------- Account form ---------- */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 12px;
+  align-items: end;
+}
+@media (max-width: 640px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.form-field label {
+  font-size: .88rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.form-field label .required { color: var(--danger); }
+.form-field input {
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-3);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 16px;
+  outline: none;
+  transition: border-color .15s;
+  -webkit-appearance: none;
+}
+.form-field input:focus { border-color: var(--gold); }
+.form-field input::placeholder { color: var(--text-dim); opacity: .6; }
+
+.form-field-btn { justify-content: flex-end; }
+.btn-check-id {
+  padding: 12px 24px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--gold);
+  background: var(--gold);
+  color: #0a0a0f;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: .92rem;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+  white-space: nowrap;
+}
+.btn-check-id:hover { background: #fff; }
+.btn-check-id:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.form-help {
+  font-size: .82rem;
+  color: var(--text-dim);
+  margin-top: 12px;
+  line-height: 1.5;
+}
+
+/* ---------- ID validation result ---------- */
+.id-result { margin-top: 12px; }
+.id-result-success,
+.id-result-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  font-size: .92rem;
+}
+.id-result-success {
+  background: rgba(102, 187, 106, 0.12);
+  border: 1px solid rgba(102, 187, 106, 0.35);
+  color: var(--ok);
+}
+.id-result-error {
+  background: rgba(239, 83, 80, 0.12);
+  border: 1px solid rgba(239, 83, 80, 0.35);
+  color: var(--danger);
+}
+.id-result-icon {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+.id-result-sub {
+  display: block;
+  font-size: .82rem;
+  opacity: .8;
+  margin-top: 2px;
+}
+
+/* ---------- Region selector ---------- */
+.region-grid {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.region-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-family: inherit;
+  font-size: .92rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.region-btn:hover {
+  background: var(--card-hover);
+  border-color: var(--border-hi);
+}
+.region-btn.active {
+  background: rgba(255, 215, 0, 0.12);
+  border-color: var(--gold);
+  color: var(--gold);
+  font-weight: 700;
+}
+.region-flag { font-size: 1.3rem; }
+
+/* ---------- Package category tabs ---------- */
+.pkg-category-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+/* ---------- Package grid ---------- */
+.pkg-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+}
+.pkg-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 18px 12px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--border);
+  background: var(--card);
+  cursor: pointer;
+  transition: all .15s ease;
+  position: relative;
+}
+.pkg-card:hover {
+  background: var(--card-hover);
+  border-color: var(--border-hi);
+  transform: translateY(-2px);
+}
+.pkg-card.selected {
+  border-color: var(--gold);
+  background: rgba(255, 215, 0, 0.08);
+  box-shadow: 0 0 0 1px var(--gold), 0 4px 20px rgba(255, 215, 0, 0.15);
+}
+.pkg-icon {
+  font-size: 1.8rem;
+  margin-bottom: 6px;
+}
+.pkg-name {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #fff;
+  font-family: 'Rajdhani', sans-serif;
+}
+.pkg-price {
+  font-size: .88rem;
+  color: var(--gold);
+  font-weight: 700;
+  margin-top: 4px;
+}
+.pkg-original {
+  font-size: .78rem;
+  color: var(--text-dim);
+  text-decoration: line-through;
+  margin-top: 2px;
+}
+.pkg-discount {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--danger);
+  color: #fff;
+  font-size: .68rem;
+  font-weight: 700;
+}
+
+/* Loading spinner */
+.pkg-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 32px;
+  color: var(--text-dim);
+  font-size: .92rem;
+}
+.spinner {
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--border);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- Checkout ---------- */
+.checkout-summary {
+  border-radius: var(--radius-sm);
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.checkout-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.checkout-row:last-child { border-bottom: none; }
+.checkout-label {
+  font-size: .88rem;
+  color: var(--text-dim);
+}
+.checkout-value {
+  font-weight: 600;
+  color: #fff;
+}
+.checkout-row-total {
+  background: rgba(255, 215, 0, 0.06);
+}
+.checkout-total {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.3rem;
+  color: var(--gold) !important;
+}
+
+.checkout-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+.btn-pay {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 32px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: var(--gold);
+  color: #0a0a0f;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background .15s;
+}
+.btn-pay:hover { background: #fff; }
+.btn-pay:disabled { opacity: .5; cursor: not-allowed; }
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  padding: 14px 24px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-family: inherit;
+  font-weight: 600;
+  font-size: .92rem;
+  cursor: pointer;
+  transition: all .15s;
+  text-decoration: none;
+}
+.btn-secondary:hover {
+  background: var(--card-hover);
+  border-color: var(--border-hi);
+  color: #fff;
+}
+
+/* ---------- Confirmation ---------- */
+.topup-confirmation {
+  text-align: center;
+}
+.confirmation-icon {
+  font-size: 3rem;
+  margin-bottom: 8px;
+}
+.topup-confirmation .checkout-summary {
+  max-width: 400px;
+  margin: 16px auto;
+}
+
+/* ---------- FAQ ---------- */
+.topup-faq { margin: 28px 0 48px; }
+.faq-item {
+  border-bottom: 1px solid var(--border);
+  padding: 14px 0;
+}
+.faq-item:first-of-type { border-top: 1px solid var(--border); }
+.faq-item summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: #fff;
+  font-size: .95rem;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary::after {
+  content: "+";
+  font-size: 1.2rem;
+  color: var(--gold);
+  font-weight: 700;
+  transition: transform .2s;
+}
+.faq-item[open] summary::after {
+  content: "−";
+}
+.faq-item p {
+  color: var(--text-dim);
+  margin: 10px 0 0;
+  font-size: .88rem;
+  line-height: 1.6;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 480px) {
+  .topup-games-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .pkg-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .how-steps {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

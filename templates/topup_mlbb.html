@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ static_url('topup.css') }}">
+{% endblock %}
+
+{% block schema %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "MLBB Diamond Top Up",
+  "description": {{ page_desc | tojson }},
+  "url": "{{ SITE_URL }}{{ canonical }}",
+  "brand": {
+    "@type": "Brand",
+    "name": "Mobile Legends: Bang Bang"
+  },
+  "offers": {
+    "@type": "AggregateOffer",
+    "priceCurrency": "SGD",
+    "lowPrice": "0.95",
+    "highPrice": "210.00",
+    "offerCount": "14",
+    "availability": "https://schema.org/InStock"
+  },
+  "seller": { "@id": "{{ SITE_URL }}/#organization" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How do I find my MLBB User ID and Server ID?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Open Mobile Legends, tap your profile icon (top left), and look below your name. You'll see your User ID and Server ID in parentheses, e.g. 123456789 (2345)."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How fast is MLBB diamond delivery?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Most orders are delivered within 0-5 minutes. During peak hours it may take up to 15 minutes."
+      }
+    }
+  ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<!-- Icon sprites for topup pages -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+  <symbol id="icon-diamond" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2L2 9l10 13 10-13L12 2zm0 2.5L18.5 9H5.5L12 4.5z"/></symbol>
+  <symbol id="icon-zap" viewBox="0 0 24 24"><path fill="currentColor" d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></symbol>
+  <symbol id="icon-shield" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-3zm0 2.18l7 2.34v4.48c0 4.64-3.1 8.83-7 10.01-3.9-1.18-7-5.37-7-10.01V6.52l7-2.34z"/></symbol>
+  <symbol id="icon-tag" viewBox="0 0 24 24"><path fill="currentColor" d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></symbol>
+  <symbol id="icon-clock" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></symbol>
+</svg>
+
+<!-- Breadcrumb -->
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="{{ url_for('topup') }}">Top Up</a><span class="sep">&rsaquo;</span><span>Mobile Legends</span>
+</nav>
+
+<!-- Game header -->
+<section class="topup-product-hero">
+  <div class="topup-product-hero-img">
+    <img src="{{ static_url('img/topup/mlbb-banner.jpg') }}" alt="Mobile Legends Bang Bang" width="400" height="200">
+  </div>
+  <div class="topup-product-hero-body">
+    <h1>Mobile Legends: Bang Bang <span class="year">Top Up</span></h1>
+    <p>Instant diamond delivery to your MLBB account. Enter your User ID and Server ID, pick a package, pay, and receive diamonds within seconds.</p>
+    <div class="topup-trust-row">
+      <span class="trust-badge"><svg class="trust-icon" aria-hidden="true"><use href="#icon-zap"></use></svg> 0&ndash;5 Min Delivery</span>
+      <span class="trust-badge"><svg class="trust-icon" aria-hidden="true"><use href="#icon-shield"></use></svg> Official Channel</span>
+    </div>
+  </div>
+</section>
+
+<!-- Step 1: Enter Account Details -->
+<section class="panel topup-step" id="step-account">
+  <div class="step-header">
+    <span class="step-num">1</span>
+    <h2>Enter Account Details</h2>
+  </div>
+  <div class="topup-account-form">
+    <div class="form-row">
+      <div class="form-field">
+        <label for="user-id">User ID <span class="required">*</span></label>
+        <input type="text" id="user-id" placeholder="e.g. 123456789" inputmode="numeric" autocomplete="off" required>
+      </div>
+      <div class="form-field">
+        <label for="server-id">Server ID (Zone ID) <span class="required">*</span></label>
+        <input type="text" id="server-id" placeholder="e.g. 2345" inputmode="numeric" autocomplete="off" required>
+      </div>
+      <div class="form-field form-field-btn">
+        <button type="button" class="btn-check-id" id="btn-check-id">Check ID</button>
+      </div>
+    </div>
+    <div class="id-result" id="id-result" hidden>
+      <div class="id-result-success" id="id-success" hidden>
+        <span>&#x2705;</span>
+        <div>
+          <strong id="player-name">&mdash;</strong>
+          <span class="id-result-sub">Account verified. You can proceed.</span>
+        </div>
+      </div>
+      <div class="id-result-error" id="id-error" hidden>
+        <span>&#x26A0;&#xFE0F;</span>
+        <div>
+          <strong>Account not found</strong>
+          <span class="id-result-sub" id="id-error-msg">Please check your User ID and Server ID.</span>
+        </div>
+      </div>
+    </div>
+    <p class="form-help">
+      <strong>How to find your ID:</strong> Open MLBB &rarr; Profile (top left) &rarr; Your User ID and Server ID are below your name. Example: 123456789 (2345)
+    </p>
+  </div>
+</section>
+
+<!-- Step 2: Select Region -->
+<section class="panel topup-step" id="step-region">
+  <div class="step-header">
+    <span class="step-num">2</span>
+    <h2>Select Region</h2>
+  </div>
+  <div class="region-grid" id="region-grid">
+    <button class="region-btn active" data-region="br">&#x1F1E7;&#x1F1F7; Brazil</button>
+    <button class="region-btn" data-region="ph">&#x1F1F5;&#x1F1ED; Philippines</button>
+    <button class="region-btn" data-region="my">&#x1F1F2;&#x1F1FE; Malaysia</button>
+    <button class="region-btn" data-region="ru">&#x1F1F7;&#x1F1FA; Russia</button>
+  </div>
+  <p class="form-help">Select the region where your MLBB account was created. Singapore accounts fall under <strong>Malaysia</strong> region.</p>
+</section>
+
+<!-- Step 3: Select Package -->
+<section class="panel topup-step" id="step-packages">
+  <div class="step-header">
+    <span class="step-num">3</span>
+    <h2>Select Package</h2>
+  </div>
+  <div class="pkg-category-tabs">
+    <button class="filter-btn active" data-cat="diamonds">&#x1F48E; Diamonds</button>
+    <button class="filter-btn" data-cat="passes">&#x1F3AB; Passes</button>
+  </div>
+  <div class="pkg-loading" id="pkg-loading">
+    <div class="spinner"></div>
+    <span>Loading packages&hellip;</span>
+  </div>
+  <div class="pkg-grid" id="pkg-grid"></div>
+</section>
+
+<!-- Step 4: Order Summary & Checkout -->
+<section class="panel topup-step" id="step-checkout" hidden>
+  <div class="step-header">
+    <span class="step-num">4</span>
+    <h2>Order Summary</h2>
+  </div>
+  <div class="checkout-summary">
+    <div class="checkout-row">
+      <span class="checkout-label">Game</span>
+      <span class="checkout-value">Mobile Legends: Bang Bang</span>
+    </div>
+    <div class="checkout-row">
+      <span class="checkout-label">User ID</span>
+      <span class="checkout-value" id="checkout-uid">&mdash;</span>
+    </div>
+    <div class="checkout-row">
+      <span class="checkout-label">Server ID</span>
+      <span class="checkout-value" id="checkout-sid">&mdash;</span>
+    </div>
+    <div class="checkout-row">
+      <span class="checkout-label">Player Name</span>
+      <span class="checkout-value" id="checkout-name">&mdash;</span>
+    </div>
+    <div class="checkout-row">
+      <span class="checkout-label">Package</span>
+      <span class="checkout-value" id="checkout-pkg">&mdash;</span>
+    </div>
+    <div class="checkout-row checkout-row-total">
+      <span class="checkout-label">Total</span>
+      <span class="checkout-value checkout-total" id="checkout-total">&mdash;</span>
+    </div>
+  </div>
+  <div class="form-field" style="max-width:400px; margin: 16px 0;">
+    <label for="checkout-email">Email (for receipt) <span class="required">*</span></label>
+    <input type="email" id="checkout-email" placeholder="your@email.com" required>
+  </div>
+  <div class="checkout-actions">
+    <button class="btn-pay" id="btn-pay" disabled><svg class="trust-icon" aria-hidden="true"><use href="#icon-shield"></use></svg> Pay Now</button>
+    <button class="btn-secondary" id="btn-back-pkg">&larr; Change Package</button>
+  </div>
+  <p class="form-help">By proceeding, you confirm the User ID and package are correct. Diamonds will be delivered to the above account within 0&ndash;5 minutes after payment.</p>
+</section>
+
+<!-- Order confirmation -->
+<section class="panel topup-step topup-confirmation" id="step-done" hidden>
+  <div class="confirmation-icon">&#x2705;</div>
+  <h2>Order Placed!</h2>
+  <p>Your diamonds are being delivered to your MLBB account. This usually takes less than 5 minutes.</p>
+  <div class="checkout-summary">
+    <div class="checkout-row">
+      <span class="checkout-label">Order ID</span>
+      <span class="checkout-value" id="done-order-id">&mdash;</span>
+    </div>
+    <div class="checkout-row">
+      <span class="checkout-label">Status</span>
+      <span class="checkout-value" style="color: var(--ok);">Processing</span>
+    </div>
+  </div>
+  <p class="form-help">A confirmation email has been sent. If you don't receive your diamonds within 15 minutes, please contact us on <a href="{{ TELEGRAM_URL }}" target="_blank" rel="noopener">Telegram</a>.</p>
+  <a href="{{ url_for('topup_mlbb') }}" class="btn-secondary">&larr; Top Up Again</a>
+</section>
+
+<script src="{{ static_url('topup.js') }}"></script>
+{% endblock %}

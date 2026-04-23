@@ -2068,6 +2068,30 @@ def meta_page() -> str:
     )
 
 
+@app.route("/topup")
+def topup() -> str:
+    return render_template(
+        "topup.html",
+        page_title=f"Instant Game Top Up — Cheapest MLBB Diamonds in SG | {SITE_NAME}",
+        page_desc="Instant top-up for Mobile Legends diamonds and more. Cheapest prices in Singapore — powered by Singapore Gaming Syndicate.",
+        page_keywords="mlbb diamond top up singapore, mobile legends top up, cheap mlbb diamonds, game top up sg",
+        canonical="/topup",
+        hide_cta_band=True,
+    )
+
+
+@app.route("/topup/mlbb")
+def topup_mlbb() -> str:
+    return render_template(
+        "topup_mlbb.html",
+        page_title=f"MLBB Diamond Top Up — Instant & Cheapest | {SITE_NAME}",
+        page_desc="Top up Mobile Legends diamonds instantly. Cheapest MLBB diamond prices in Singapore — fast, secure, official channels.",
+        page_keywords="mlbb diamond top up, mobile legends diamonds singapore, cheap mlbb diamonds, buy mlbb diamonds",
+        canonical="/topup/mlbb",
+        hide_cta_band=True,
+    )
+
+
 @app.route("/about")
 def about_page() -> str:
     return render_template(
@@ -2113,6 +2137,8 @@ def sitemap_core() -> Response:
         ("/tier-list?rank=epic",   "0.7", "daily"),
         ("/meta", "0.9", "daily"),
         ("/patch-notes", "0.9", "daily"),
+        ("/topup", "0.8", "weekly"),
+        ("/topup/mlbb", "0.8", "weekly"),
         ("/about", "0.5", "monthly"),
     ]
     parts = ['<?xml version="1.0" encoding="UTF-8"?>',

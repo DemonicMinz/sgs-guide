@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ static_url('topup.css') }}">
+{% endblock %}
+
+{% block schema %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": {{ page_title | tojson }},
+  "description": {{ page_desc | tojson }},
+  "url": "{{ SITE_URL }}{{ canonical }}",
+  "inLanguage": "{{ LANG_TAG }}",
+  "isPartOf": { "@id": "{{ SITE_URL }}/#website" },
+  "publisher": { "@id": "{{ SITE_URL }}/#organization" }
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<!-- Icon sprites for topup pages -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+  <symbol id="icon-diamond" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2L2 9l10 13 10-13L12 2zm0 2.5L18.5 9H5.5L12 4.5z"/></symbol>
+  <symbol id="icon-zap" viewBox="0 0 24 24"><path fill="currentColor" d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></symbol>
+  <symbol id="icon-shield" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-3zm0 2.18l7 2.34v4.48c0 4.64-3.1 8.83-7 10.01-3.9-1.18-7-5.37-7-10.01V6.52l7-2.34z"/></symbol>
+  <symbol id="icon-tag" viewBox="0 0 24 24"><path fill="currentColor" d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></symbol>
+  <symbol id="icon-clock" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></symbol>
+</svg>
+
+<!-- Hero banner -->
+<section class="hero-banner">
+  <div class="hero-banner-inner">
+    <h1>Instant Game <span class="year">Top Up</span></h1>
+    <p>Cheapest in-game currency top-up in Singapore. Powered by SGS &mdash; instant delivery, secure payments, and the best prices guaranteed.</p>
+    <div class="topup-trust-row">
+      <span class="trust-badge"><svg class="trust-icon" aria-hidden="true"><use href="#icon-zap"></use></svg> Instant Delivery</span>
+      <span class="trust-badge"><svg class="trust-icon" aria-hidden="true"><use href="#icon-shield"></use></svg> Secure &amp; Trusted</span>
+      <span class="trust-badge"><svg class="trust-icon" aria-hidden="true"><use href="#icon-tag"></use></svg> Best Prices</span>
+    </div>
+  </div>
+</section>
+
+<!-- How it works -->
+<section class="panel topup-how">
+  <h2>How It Works</h2>
+  <div class="how-steps">
+    <div class="how-step">
+      <span class="step-num">1</span>
+      <strong>Choose Game</strong>
+      <span class="step-desc">Select the game you want to top up</span>
+    </div>
+    <div class="how-step">
+      <span class="step-num">2</span>
+      <strong>Enter ID</strong>
+      <span class="step-desc">Enter your User ID and Server ID</span>
+    </div>
+    <div class="how-step">
+      <span class="step-num">3</span>
+      <strong>Select Package</strong>
+      <span class="step-desc">Choose your diamond or credit package</span>
+    </div>
+    <div class="how-step">
+      <span class="step-num">4</span>
+      <strong>Pay &amp; Receive</strong>
+      <span class="step-desc">Pay securely and receive instantly</span>
+    </div>
+  </div>
+</section>
+
+<!-- Games grid -->
+<section class="topup-games-section">
+  <h2>Choose a Game</h2>
+  <div class="topup-games-grid">
+
+    <a href="{{ url_for('topup_mlbb') }}" class="topup-game-card">
+      <div class="topup-game-img">
+        <img src="{{ static_url('img/topup/mlbb.jpg') }}" alt="Mobile Legends: Bang Bang" width="300" height="300" loading="lazy">
+        <span class="topup-badge popular">Popular</span>
+      </div>
+      <div class="topup-game-body">
+        <h3>Mobile Legends: Bang Bang</h3>
+        <p class="topup-game-desc">Diamonds</p>
+        <span class="topup-game-price">From <strong>$0.95</strong></span>
+        <span class="topup-game-delivery"><svg class="trust-icon" aria-hidden="true"><use href="#icon-zap"></use></svg> Instant</span>
+      </div>
+    </a>
+
+    <a href="{{ url_for('topup_mlbb') }}" class="topup-game-card">
+      <div class="topup-game-img">
+        <img src="{{ static_url('img/topup/mlbb-weekly.jpg') }}" alt="MLBB Weekly Diamond Pass" width="300" height="300" loading="lazy">
+      </div>
+      <div class="topup-game-body">
+        <h3>MLBB Weekly Pass</h3>
+        <p class="topup-game-desc">Weekly Diamond Pass</p>
+        <span class="topup-game-price">From <strong>$1.50</strong></span>
+        <span class="topup-game-delivery"><svg class="trust-icon" aria-hidden="true"><use href="#icon-zap"></use></svg> Instant</span>
+      </div>
+    </a>
+
+    <div class="topup-game-card coming-soon">
+      <div class="topup-game-img">
+        <img src="{{ static_url('img/topup/genshin.jpg') }}" alt="Genshin Impact" width="300" height="300" loading="lazy">
+        <span class="topup-badge soon">Coming Soon</span>
+      </div>
+      <div class="topup-game-body">
+        <h3>Genshin Impact</h3>
+        <p class="topup-game-desc">Genesis Crystals</p>
+        <span class="topup-game-price">Coming Soon</span>
+      </div>
+    </div>
+
+    <div class="topup-game-card coming-soon">
+      <div class="topup-game-img">
+        <img src="{{ static_url('img/topup/honkai-sr.jpg') }}" alt="Honkai: Star Rail" width="300" height="300" loading="lazy">
+        <span class="topup-badge soon">Coming Soon</span>
+      </div>
+      <div class="topup-game-body">
+        <h3>Honkai: Star Rail</h3>
+        <p class="topup-game-desc">Oneiric Shards</p>
+        <span class="topup-game-price">Coming Soon</span>
+      </div>
+    </div>
+
+    <div class="topup-game-card coming-soon">
+      <div class="topup-game-img">
+        <img src="{{ static_url('img/topup/freefire.jpg') }}" alt="Free Fire" width="300" height="300" loading="lazy">
+        <span class="topup-badge soon">Coming Soon</span>
+      </div>
+      <div class="topup-game-body">
+        <h3>Free Fire</h3>
+        <p class="topup-game-desc">Diamonds</p>
+        <span class="topup-game-price">Coming Soon</span>
+      </div>
+    </div>
+
+    <div class="topup-game-card coming-soon">
+      <div class="topup-game-img">
+        <img src="{{ static_url('img/topup/brawlstars.jpg') }}" alt="Brawl Stars" width="300" height="300" loading="lazy">
+        <span class="topup-badge soon">Coming Soon</span>
+      </div>
+      <div class="topup-game-body">
+        <h3>Brawl Stars</h3>
+        <p class="topup-game-desc">Gems</p>
+        <span class="topup-game-price">Coming Soon</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="panel topup-faq">
+  <h2>Frequently Asked Questions</h2>
+  <details class="faq-item">
+    <summary>How fast is the delivery?</summary>
+    <p>Most orders are delivered instantly (within 0&ndash;5 minutes). During peak hours it may take up to 15 minutes.</p>
+  </details>
+  <details class="faq-item">
+    <summary>Is this safe and legit?</summary>
+    <p>Yes. We use official game recharge channels via authorized API partners. Your account is completely safe &mdash; we never ask for your password.</p>
+  </details>
+  <details class="faq-item">
+    <summary>What payment methods do you accept?</summary>
+    <p>We accept PayNow, GrabPay, credit/debit cards, and bank transfer. More payment options coming soon.</p>
+  </details>
+  <details class="faq-item">
+    <summary>What if I enter the wrong User ID?</summary>
+    <p>We validate your User ID before processing payment. You'll see your in-game name displayed for confirmation. If something goes wrong, contact us on Telegram immediately.</p>
+  </details>
+  <details class="faq-item">
+    <summary>Can I get a refund?</summary>
+    <p>Since diamonds are delivered instantly to your game account, refunds are generally not possible. However, if there's an error on our side, contact us on Telegram and we'll resolve it.</p>
+  </details>
+  <details class="faq-item">
+    <summary>Do you support Indonesian MLBB accounts?</summary>
+    <p>Not at the moment. Indonesian accounts use a separate payment system. We currently support Singapore, Malaysia, Philippines, and Brazil regions.</p>
+  </details>
+</section>
+{% endblock %}
