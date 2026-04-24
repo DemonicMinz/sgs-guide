@@ -45,3 +45,4 @@ npm-debug.log*
 secrets/
 __pycache__/
 cache/
+venv/
