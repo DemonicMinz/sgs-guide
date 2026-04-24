@@ -101,6 +101,17 @@ app = Flask(__name__, static_folder="static", template_folder="templates")
 # URLs would be "http://127.0.0.1:8085/…" which is poison for SEO.
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
+# ---- Top-up payment blueprint -------------------------------------------- #
+# Routes live in topup_payment.py; HitPay + MooGold clients are side modules.
+# Registration is lazy-safe: if env vars are missing, endpoints degrade to
+# the mock supplier and refuse to create real HitPay payments.
+try:
+    from topup_payment import bp as topup_bp
+    app.register_blueprint(topup_bp)
+    logging.getLogger(__name__).info("Registered topup_payment blueprint at /api/topup")
+except Exception as _e:  # pragma: no cover
+    logging.getLogger(__name__).exception("Failed to register topup blueprint: %s", _e)
+
 # ---- Response compression (brotli > gzip > deflate) ---------------------- #
 # Cuts HTML/CSS/JS/XML bytes 70-85% on the wire. Biggest single perf win.
 if _HAS_COMPRESS:
@@ -2088,6 +2099,22 @@ def topup_mlbb() -> str:
         page_desc="Top up Mobile Legends diamonds instantly. Cheapest MLBB diamond prices in Singapore — fast, secure, official channels.",
         page_keywords="mlbb diamond top up, mobile legends diamonds singapore, cheap mlbb diamonds, buy mlbb diamonds",
         canonical="/topup/mlbb",
+        hide_cta_band=True,
+    )
+
+
+@app.route("/topup/status/<ref>")
+def topup_status(ref: str) -> str:
+    """HitPay redirect lands here after checkout — shows live order status."""
+    # Light sanity check on the reference format
+    if not re.fullmatch(r"sgs-[a-f0-9]{8,32}", ref):
+        abort(404)
+    return render_template(
+        "topup_status.html",
+        ref=ref,
+        page_title=f"Order Status — {ref} | {SITE_NAME}",
+        page_desc="Your top-up order is being processed.",
+        canonical=f"/topup/status/{ref}",
         hide_cta_band=True,
     )
 

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Order Status — {{ ref }}{% endblock %}
+{% block content %}
+<section class="topup-wrap">
+  <h1 style="text-align:center; color:var(--gold); margin-bottom:8px;">Thank you!</h1>
+  <p style="text-align:center; color:var(--text-2); margin-bottom:24px;">
+    We're processing your top-up. Reference: <code>{{ ref }}</code>
+  </p>
+
+  <div id="status-card" style="max-width:520px; margin:0 auto; padding:24px; background:var(--bg-3); border-radius:12px; border:1px solid var(--border);">
+    <div id="status-state" style="font-size:20px; font-weight:700; color:var(--gold); text-align:center; margin-bottom:12px;">
+      Checking status…
+    </div>
+    <div id="status-details" style="color:var(--text-2); font-size:14px;"></div>
+    <div id="status-spinner" style="text-align:center; margin-top:16px;">
+      <span style="display:inline-block; width:24px; height:24px; border:3px solid var(--gold); border-top-color:transparent; border-radius:50%; animation:spin 1s linear infinite;"></span>
+    </div>
+  </div>
+
+  <div style="text-align:center; margin-top:32px;">
+    <a href="/topup" class="btn-ghost">← Back to Top-Up</a>
+  </div>
+</section>
+
+<style>
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
+<script>
+(function () {
+  var ref = {{ ref | tojson }};
+  var stateEl = document.getElementById("status-state");
+  var detailsEl = document.getElementById("status-details");
+  var spinnerEl = document.getElementById("status-spinner");
+
+  var LABEL = {
+    pending_payment: ["⏳ Awaiting Payment", "Complete payment in the HitPay window. If you already paid, give us a moment."],
+    hitpay_completed: ["✅ Payment Received", "Sending diamonds to your account now…"],
+    supplier_pending: ["⏳ Delivering…", "Your diamonds are being processed by our supplier. This usually takes <1 min."],
+    fulfilled: ["🎉 Delivered!", "Your diamonds should now be in your MLBB account. Enjoy!"],
+    hitpay_failed: ["❌ Payment Failed", "The payment didn't go through. Please try again."],
+    hitpay_cancelled: ["🚫 Payment Cancelled", "You cancelled the checkout. No charges made."],
+  };
+
+  async function poll() {
+    try {
+      var res = await fetch("/api/topup/status/" + encodeURIComponent(ref));
+      var data = await res.json();
+      if (!data.ok) {
+        stateEl.textContent = "❓ Order not found";
+        spinnerEl.hidden = true;
+        return;
+      }
+      var o = data.order;
+      var label = LABEL[o.status] || ["⏳ " + o.status, "Working on it…"];
+      stateEl.textContent = label[0];
+      detailsEl.innerHTML =
+        "<div><strong>Amount:</strong> S$" + (o.amount_sgd || "—") + "</div>" +
+        "<div><strong>Player:</strong> " + (o.player_name || o.user_id || "—") + "</div>" +
+        "<div style='margin-top:12px; font-size:13px; color:var(--text-3);'>" + label[1] + "</div>";
+
+      var terminal = ["fulfilled", "hitpay_failed", "hitpay_cancelled"];
+      if (terminal.indexOf(o.status) >= 0) {
+        spinnerEl.hidden = true;
+        return;
+      }
+    } catch (e) {
+      console.warn("status poll failed", e);
+    }
+    setTimeout(poll, 3000);
+  }
+  poll();
+})();
+</script>
+{% endblock %}

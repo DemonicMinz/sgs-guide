@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual env
+venv/
+env/
+.venv/
+ENV/
+
+# Local config / secrets
+.env
+.env.local
+*.env.local
+
+# Flask
+instance/
+.webassets-cache
+
+# Cache & logs
+cache/*.json
+cache/*.pickle
+logs/*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node (if frontend tooling added)
+node_modules/
+npm-debug.log*
+
+# Secrets we must never commit
+*.pem
+*.key
+secrets/

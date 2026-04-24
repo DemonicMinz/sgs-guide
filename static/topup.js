@@ -2,8 +2,8 @@
   "use strict";
 
   // ---- Configuration ----
-  // Change this to your Cloudflare Worker URL once deployed
-  const API_BASE = "https://topup-api.sgslah.com";
+  // Same-origin Flask blueprint (topup_payment.py). Empty string = same host.
+  const API_BASE = "";
 
   // ---- Mock data (used when API is not configured yet) ----
   const MOCK_PACKAGES = {
@@ -37,7 +37,7 @@
     category: "diamonds",
     selectedPkg: null,
     packages: null,
-    useMock: true,  // Will be set to false once Smile.one merchant is configured
+    useMock: false,  // Backend now proxies to MooGold (or mock if creds missing)
   };
 
   // ---- DOM refs ----
@@ -115,20 +115,19 @@
           showIdError("Account not found. Please check your User ID and Server ID.");
         }
       } else {
-        // Real Smile.one API call via Cloudflare Worker
-        var res = await fetch(API_BASE + "/api/check-role", {
+        // Real API call via Flask blueprint (/api/topup/validate)
+        var res = await fetch(API_BASE + "/api/topup/validate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            product: "mobilelegends",
-            userid: uid,
-            zoneid: sid,
-            region: state.region,
+            game: "mobile-legends",
+            user_id: uid,
+            server_id: sid,
           }),
         });
         var data = await res.json();
-        if (data.status === 200 && data.username) {
-          showIdSuccess(data.username);
+        if (data.ok && data.player_name) {
+          showIdSuccess(data.player_name);
         } else {
           showIdError(data.error || "Account not found. Please check your User ID and Server ID.");
         }
@@ -176,14 +175,23 @@
         await sleep(400);
         state.packages = MOCK_PACKAGES;
       } else {
-        // Fetch from Cloudflare Worker
-        var res = await fetch(API_BASE + "/api/products?region=" + state.region + "&product=mobilelegends");
+        // Fetch from Flask blueprint (/api/topup/products)
+        var res = await fetch(API_BASE + "/api/topup/products?product=mobilelegends");
         var data = await res.json();
-        if (data.status === 200 && data.product_list) {
-          // Transform API response to our format
+        if (data.ok && data.products) {
+          // Transform API response to UI format
+          var mapped = data.products.map(function (p) {
+            return {
+              pid: p.sku,
+              name: p.name,
+              price: p.price_sgd.toFixed(2),
+              original: null,  // supplier doesn't expose retail; show discount only when set
+              icon: (p.name || "").toLowerCase().indexOf("pass") >= 0 ? "🎫" : "💎",
+            };
+          });
           state.packages = {
-            diamonds: data.product_list.filter(function (p) { return !p.name.toLowerCase().includes("pass"); }),
-            passes: data.product_list.filter(function (p) { return p.name.toLowerCase().includes("pass"); }),
+            diamonds: mapped.filter(function (p) { return p.icon !== "🎫"; }),
+            passes:   mapped.filter(function (p) { return p.icon === "🎫"; }),
           };
         }
       }
@@ -291,22 +299,24 @@
         await sleep(1500);
         showConfirmation("SGS-" + Date.now().toString(36).toUpperCase());
       } else {
-        // Real purchase via Cloudflare Worker
-        var res = await fetch(API_BASE + "/api/purchase", {
+        // Real checkout via Flask blueprint — creates HitPay payment, returns redirect URL
+        var res = await fetch(API_BASE + "/api/topup/checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            product: "mobilelegends",
-            productid: state.selectedPkg.pid,
-            userid: state.userId,
-            zoneid: state.serverId,
-            region: state.region,
+            game: "mobile-legends",
+            sku: state.selectedPkg.pid,
+            user_id: state.userId,
+            server_id: state.serverId,
             email: email ? email.value.trim() : "",
+            name: state.playerName || "",
           }),
         });
         var data = await res.json();
-        if (data.status === 200 && data.game_order) {
-          showConfirmation(data.game_order);
+        if (data.ok && data.checkout_url) {
+          // Redirect user to HitPay hosted checkout (PayNow QR / card)
+          window.location.href = data.checkout_url;
+          return;  // don't reset button — we're navigating away
         } else {
           alert("Order failed: " + (data.error || "Unknown error. Please try again or contact support."));
         }
