@@ -611,6 +611,25 @@
       {% endfor %}
     </ul>
   {% endif %}
+
+  {% if counter_items %}
+  <section class="counter-items-section">
+    <h3 class="sub-h3">Items to Buy Against {{ detail.name }}</h3>
+    <div class="counter-items-grid">
+      {% for item in counter_items %}
+      <div class="counter-item-card">
+        {% if item.icon %}
+        <img src="{{ item.icon }}" alt="{{ item.name }}" width="48" height="48" loading="lazy" decoding="async">
+        {% endif %}
+        <div class="counter-item-info">
+          <strong>{{ item.name }}</strong>
+          <p>{{ item.reason }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
 </section>
 
 <!-- ───────────── Synergy ───────────── -->

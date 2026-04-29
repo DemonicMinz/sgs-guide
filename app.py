@@ -850,6 +850,92 @@ def hero_tips(role: str, hero_name: str) -> list[str]:
     return tips[:5]
 
 
+# --------------------------------------------------------------------------- #
+# Counter items: keyed by hero speciality tag or role.
+# Item names must match EXACTLY what's in the equipment API (for icon lookup).
+# Unresolved names still render as plain text without an icon.
+# --------------------------------------------------------------------------- #
+COUNTER_ITEM_RULES: list[dict] = [
+    {
+        "triggers": ["Regen", "Sustain", "Heal"],
+        "items": ["Sea Halberd", "Necklace of Durance"],
+        "reason": "Reduces healing received by 50% — essential against regen-heavy heroes.",
+    },
+    {
+        "triggers": ["HP", "High HP", "Tank"],
+        "items": ["Demon Hunter Sword", "Calamity Reaper"],
+        "reason": "Deals % max HP damage — punishes heroes stacking health items.",
+    },
+    {
+        "triggers": ["Physical", "Burst", "Fighter", "Marksman"],
+        "items": ["Antique Cuirass", "Dominance Ice", "Thunder Belt"],
+        "reason": "Reduces physical attack and slows — limits burst damage output.",
+    },
+    {
+        "triggers": ["Magic", "Mage", "Poke"],
+        "items": ["Athena's Shield", "Radiant Armor"],
+        "reason": "Magic damage reduction — essential against sustained magic dealers.",
+    },
+    {
+        "triggers": ["Crowd Control", "CC", "Stun", "Lock"],
+        "items": ["Tough Boots"],
+        "reason": "Reduces crowd control duration — makes CC heroes less effective.",
+    },
+    {
+        "triggers": ["Shield", "Protect"],
+        "items": ["True Damage", "Malefic Roar"],
+        "reason": "Penetrates or bypasses shields — counters passive shield mechanics.",
+    },
+    {
+        "triggers": ["Assassin", "Blink", "Chase"],
+        "items": ["Wind of Nature", "Winter Truncheon"],
+        "reason": "Invulnerability on activation — lets you survive burst combos.",
+    },
+    {
+        "triggers": ["Support", "Heal Ally"],
+        "items": ["Sea Halberd", "Necklace of Durance", "Dominance Ice"],
+        "reason": "Anti-heal items stack in team fights — shuts down support-dependent comps.",
+    },
+]
+
+
+def get_counter_items(hero_detail: dict, equipment_map: dict) -> list[dict]:
+    """Derive counter items for a hero from speciality tags + role.
+
+    Returns up to 4 {name, icon, reason} dicts. Item icons resolve against
+    the live equipment catalogue — names that don't match render as plain text.
+    """
+    specialities = [s.lower() for s in (hero_detail.get("speciality") or [])]
+    role = (hero_detail.get("roles") or ["Fighter"])[0]
+    tags = specialities + [role.lower()]
+
+    name_to_icon: dict[str, str | None] = {}
+    for item in equipment_map.values():
+        name = item.get("name")
+        if name:
+            name_to_icon[name] = item.get("icon")
+
+    seen_items: set[str] = set()
+    results: list[dict] = []
+
+    for rule in COUNTER_ITEM_RULES:
+        if not any(trigger.lower() in tag for trigger in rule["triggers"] for tag in tags):
+            continue
+        for item_name in rule["items"]:
+            if item_name in seen_items:
+                continue
+            seen_items.add(item_name)
+            results.append({
+                "name":   item_name,
+                "icon":   name_to_icon.get(item_name),
+                "reason": rule["reason"],
+            })
+        if len(results) >= 4:
+            break
+
+    return results[:4]
+
+
 def build_hero_faqs(
     name: str,
     role: str,
@@ -1634,6 +1720,9 @@ def hero_page(slug: str) -> str:
     combos    = f_combos.result()    or []
     builds    = f_builds.result()    or []
 
+    # Counter items — derived from speciality tags + equipment catalogue
+    counter_items = get_counter_items(detail, get_equipment_map())
+
     # Resolve related hero names/slugs
     by_id = {h["id"]: h for h in heroes}
     def resolve(ids: list[int]) -> list[dict]:
@@ -1712,6 +1801,7 @@ def hero_page(slug: str) -> str:
         stats=stats,
         counters=counters,
         counter_tally=counter_tally,
+        counter_items=counter_items,
         synergies=synergies,
         combos=combos,
         builds=builds,
