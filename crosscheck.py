@@ -14,6 +14,7 @@ soft `editorial_note` rather than a hard conflict.
 """
 from __future__ import annotations
 
+import codecs
 import json
 import logging
 import re
@@ -124,10 +125,64 @@ def _write_cc_cache(source: str, data: dict[str, str]) -> None:
 
 
 # --------------------------------------------------------------------------- #
+# Helpers for SPA pages that embed JSON in __next_f.push() chunks.
+# --------------------------------------------------------------------------- #
+_NEXT_F_PUSH = re.compile(r'self\.__next_f\.push\(\[\d+,\s*"((?:[^"\\]|\\.)*)"\]\)')
+
+
+def _extract_rsc_payload(html: str) -> str:
+    """Concatenate and unescape the React Server Components stream that
+    Next.js App Router emits as `self.__next_f.push([...])` chunks. The
+    decoded text contains the page's JSON data inline."""
+    out = ""
+    for fragment in _NEXT_F_PUSH.findall(html):
+        try:
+            out += codecs.decode(fragment, "unicode_escape")
+        except Exception:  # noqa: BLE001
+            pass
+    return out
+
+
+def _find_balanced(text: str, open_idx: int) -> int:
+    """Index of the bracket matching `text[open_idx]`. Skips strings (with
+    \\" escapes). Returns -1 if no match."""
+    open_ch = text[open_idx]
+    close_ch = "]" if open_ch == "[" else "}"
+    depth = 0
+    in_str = False
+    i = open_idx
+    while i < len(text):
+        ch = text[i]
+        if in_str:
+            if ch == "\\":
+                i += 2
+                continue
+            if ch == '"':
+                in_str = False
+        else:
+            if ch == '"':
+                in_str = True
+            elif ch == open_ch:
+                depth += 1
+            elif ch == close_ch:
+                depth -= 1
+                if depth == 0:
+                    return i
+        i += 1
+    return -1
+
+
+# --------------------------------------------------------------------------- #
 # Scrapers - each returns {hero_slug: tier_label}. Empty dict on failure.
 # --------------------------------------------------------------------------- #
 def _scrape_mlbbgg() -> dict[str, str]:
-    """Returns {hero_slug: tier_label} from mlbb.gg automated tier list."""
+    """Returns {hero_slug: tier_label} from mlbb.gg automated tier list.
+
+    mlbb.gg is a Next.js App Router site - the tier data is embedded
+    inline as a serialized RSC payload, not in the HTML markup. We pull
+    the chunks, find the `[{"tier":"SS","data":[...]},...]` array and
+    parse it as JSON.
+    """
     cached = _read_cc_cache("mlbbgg")
     if cached is not None:
         log.info("[mlbb.gg] Serving from cache (%d heroes)", len(cached))
@@ -138,38 +193,33 @@ def _scrape_mlbbgg() -> dict[str, str]:
         r = httpx.get(SOURCES["mlbbgg"], headers=HEADERS, timeout=REQUEST_TIMEOUT,
                       follow_redirects=True)
         r.raise_for_status()
-        html = r.text
+        payload = _extract_rsc_payload(r.text)
 
-        tier_blocks = re.findall(
-            r'(?:tier|data-tier)[="\s]+(["\']?)(SS?|A|B|C|D)\1[^>]*>.*?'
-            r'<(?:a|span)[^>]*>([^<]{2,30})</(?:a|span)>',
-            html, re.DOTALL | re.IGNORECASE,
-        )
-        for _, tier_raw, name_raw in tier_blocks:
-            name = name_raw.strip()
-            if len(name) < 2:
-                continue
-            slug = _name_to_slug(name)
-            if slug:
-                results[slug] = tier_raw.upper()
-
-        # Fallback: hero href + adjacent tier label
-        if not results:
-            hero_tiers = re.findall(
-                r'href=["\'][^"\']*?/hero/([a-z0-9-]+)["\'][^>]*>[^<]*'
-                r'(?:<[^>]+>)*\s*([A-Z]{1,2})\s*(?:</[^>]+>)*\s*(?:tier|Tier)',
-                html, re.IGNORECASE,
-            )
-            for slug, tier in hero_tiers:
-                tier_up = tier.upper()
-                if tier_up in TIER_SCORES:
-                    results[slug] = tier_up
+        anchor = re.search(r'"data"\s*:\s*\[\s*\{"tier"', payload)
+        if anchor:
+            arr_start = payload.index("[", anchor.start())
+            arr_end = _find_balanced(payload, arr_start)
+            if arr_end > arr_start:
+                try:
+                    parsed = json.loads(payload[arr_start:arr_end + 1])
+                except json.JSONDecodeError as exc:
+                    log.warning("[mlbb.gg] JSON parse failed: %s", exc)
+                    parsed = []
+                for tier_block in parsed:
+                    tier = (tier_block.get("tier") or "").upper()
+                    if tier not in TIER_SCORES:
+                        continue
+                    for entry in tier_block.get("data", []) or []:
+                        hero = entry.get("hero") or {}
+                        slug = _name_to_slug(hero.get("name") or "")
+                        if slug:
+                            results.setdefault(slug, tier)
 
         if results:
             _write_cc_cache("mlbbgg", results)
             log.info("[mlbb.gg] Fetched %d hero tiers", len(results))
         else:
-            log.warning("[mlbb.gg] Parsed 0 tiers - HTML structure may have changed. Inspect the page manually.")
+            log.warning("[mlbb.gg] Parsed 0 tiers - RSC payload structure may have changed. Inspect the page manually.")
 
     except Exception as exc:  # noqa: BLE001
         log.warning("[mlbb.gg] Fetch failed: %s", exc)
@@ -177,8 +227,26 @@ def _scrape_mlbbgg() -> dict[str, str]:
     return results
 
 
+# Pattern shared by the mlbbhub scraper. mlbbhub embeds the tier list
+# inside a JSON-LD ItemList where each name reads "Hero (X-Tier)" and the
+# url points at /heroes/<slug>. The blob is a JSON string nested inside
+# another JSON document so quotes appear escaped (\\\" or \").
+_MLBBHUB_ENTRY = re.compile(
+    r'(?:\\?")name(?:\\?")\s*:\s*(?:\\?")([A-Z][A-Za-z0-9 \.\'\-]{1,28})'
+    r'\s*\(([A-Z]{1,2})-Tier\)(?:\\?").{1,80}?'
+    r'(?:\\?")url(?:\\?")\s*:\s*(?:\\?")https?://mlbbhub\.com/heroes/([a-z0-9\-]+)(?:\\?")',
+    re.DOTALL,
+)
+
+
 def _scrape_mlbbhub() -> dict[str, str]:
-    """Returns {hero_slug: tier_label} from mlbbhub.com tier list."""
+    """Returns {hero_slug: tier_label} from mlbbhub.com.
+
+    mlbbhub emits its full tier list as a JSON-LD ItemList where each
+    entry's name is `"<Hero> (<Tier>-Tier)"`. Stable structured data
+    that does not depend on visual layout - the cleanest source we
+    have.
+    """
     cached = _read_cc_cache("mlbbhub")
     if cached is not None:
         log.info("[mlbbhub] Serving from cache (%d heroes)", len(cached))
@@ -189,47 +257,17 @@ def _scrape_mlbbhub() -> dict[str, str]:
         r = httpx.get(SOURCES["mlbbhub"], headers=HEADERS, timeout=REQUEST_TIMEOUT,
                       follow_redirects=True)
         r.raise_for_status()
-        html = r.text
-
-        # mlbbhub renders tier rows with a tier label then a list of hero anchors.
-        # Strategy: split by tier-row boundaries, then pull hero names within each.
-        tier_sections = re.findall(
-            r'(?:tier[-_]?row|tier[-_]?(?:label|name|header))[^>]*>\s*'
-            r'(SS?|A|B|C|D)\s*<.*?(?=tier[-_]?row|tier[-_]?label|$)',
-            html, re.DOTALL | re.IGNORECASE,
-        )
-        # Easier alternative: scan for tier badge then collect adjacent hero names
-        for match in re.finditer(
-            r'(?:class=["\'][^"\']*tier[-_]?(?:badge|label|name)[^"\']*["\'][^>]*>\s*'
-            r'(SS?|A|B|C|D)\s*<)(.*?)(?=class=["\'][^"\']*tier[-_]?(?:badge|label|name)|$)',
-            html, re.DOTALL | re.IGNORECASE,
-        ):
-            tier = match.group(1).upper()
-            block = match.group(2)
-            for name_match in re.finditer(
-                r'(?:alt|title|data-name)=["\']([A-Z][A-Za-z\'\.\- ]{1,28})["\']',
-                block,
-            ):
-                slug = _name_to_slug(name_match.group(1))
-                if slug:
-                    results.setdefault(slug, tier)
-
-        # Fallback: pull from hero anchor + nearby tier element
-        if not results:
-            for href_match in re.finditer(
-                r'href=["\'][^"\']*?/(?:hero|heroes)/([a-z0-9-]+)["\']'
-                r'(?:[^>]*>[^<]*){0,3}(?:<[^>]+>){0,3}\s*([A-Z]{1,2})\s*<',
-                html, re.IGNORECASE,
-            ):
-                slug, tier = href_match.group(1), href_match.group(2).upper()
-                if tier in TIER_SCORES:
-                    results.setdefault(slug, tier)
+        for m in _MLBBHUB_ENTRY.finditer(r.text):
+            tier = m.group(2).upper()
+            slug = m.group(3)
+            if tier in TIER_SCORES and slug:
+                results.setdefault(slug, tier)
 
         if results:
             _write_cc_cache("mlbbhub", results)
             log.info("[mlbbhub] Fetched %d hero tiers", len(results))
         else:
-            log.warning("[mlbbhub] Parsed 0 tiers - HTML structure may have changed.")
+            log.warning("[mlbbhub] Parsed 0 tiers - JSON-LD structure may have changed.")
 
     except Exception as exc:  # noqa: BLE001
         log.warning("[mlbbhub] Fetch failed: %s", exc)
@@ -237,11 +275,28 @@ def _scrape_mlbbhub() -> dict[str, str]:
     return results
 
 
-def _scrape_pocketgamer() -> dict[str, str]:
-    """Returns {hero_slug: tier_label} from Pocket Gamer's editorial tier list.
+# Word lists used to filter false positives when parsing PG's prose-heavy
+# role sections. Anything containing one of these tokens is rejected as
+# a hero name.
+_PG_NOISE_TOKENS = (
+    "tier", "below", "click", "note", "pocket", "mobile legends",
+    "updated", "role", "damage", "team", "play", "best", "pick", "win",
+    "jungle", "tank", "mage", "fighter", "marksman", "support", "assassin",
+)
+_PG_ROLES = ("Tanks", "Fighters", "Marksmen", "Mages", "Assassins", "Supports")
 
-    PG groups heroes under 'Tier S', 'Tier A', etc. headings - we walk the page
-    section by section and assign every hero name in each section to that tier.
+
+def _scrape_pocketgamer() -> dict[str, str]:
+    """Returns {hero_slug: tier_label} from Pocket Gamer's editorial tier
+    list.
+
+    PG groups heroes by role rather than by tier. Within each role
+    section the layout is `Tier\\n<role>\\nS+\\nHero, Hero\\nS\\nHero...`,
+    so we walk each role section line-by-line and treat any tier-letter
+    line as a heading whose following lines are comma-separated hero
+    names. `S+` is normalised to `SS`. Editorial source - any false
+    positives that don't match an OpenMLBB slug are silently dropped at
+    the join in run_crosscheck().
     """
     cached = _read_cc_cache("pocketgamer")
     if cached is not None:
@@ -255,31 +310,41 @@ def _scrape_pocketgamer() -> dict[str, str]:
         r.raise_for_status()
         html = r.text
 
-        # Split into sections each starting with a "Tier X" heading.
-        sections = re.split(
-            r'(?i)<h[2-4][^>]*>\s*(?:Tier\s+)?(SS?|A|B|C|D)[^<]*</h[2-4]>',
-            html,
-        )
-        # Pattern of sections: [pre, tier1, body1, tier2, body2, ...]
-        for i in range(1, len(sections) - 1, 2):
-            tier = sections[i].upper()
-            body = sections[i + 1]
-            if tier not in TIER_SCORES:
+        for role in _PG_ROLES:
+            section_match = re.search(
+                rf'Best Mobile Legends {role}(.*?)(?:Best Mobile Legends|$)',
+                html, re.DOTALL,
+            )
+            if not section_match:
                 continue
-            # Hero names in PG appear as bolded headings or link text
-            for name_match in re.finditer(
-                r'<(?:strong|b|h[3-5]|a)[^>]*>\s*([A-Z][A-Za-z\'\.\- ]{1,28})\s*</(?:strong|b|h[3-5]|a)>',
-                body,
-            ):
-                name = name_match.group(1).strip()
-                if len(name) < 2:
+            text = re.sub(r'<[^>]+>', '\n', section_match.group(1))
+            text = re.sub(r'\n{2,}', '\n', text)
+
+            current_tier: str | None = None
+            for raw_line in text.split("\n"):
+                line = raw_line.strip()
+                if not line:
                     continue
-                # Skip obvious non-hero matches
-                if name.lower() in {"tier", "list", "best", "top", "the", "and", "or"}:
+                tier_match = re.fullmatch(r'(S\+|SS|S|A|B|C|D)', line)
+                if tier_match:
+                    current_tier = tier_match.group(1)
+                    if current_tier == "S+":
+                        current_tier = "SS"
                     continue
-                slug = _name_to_slug(name)
-                if slug:
-                    results.setdefault(slug, tier)
+                if current_tier is None or line == "-":
+                    continue
+                lower = line.lower()
+                if any(tok in lower for tok in _PG_NOISE_TOKENS):
+                    continue
+                for raw_name in line.split(","):
+                    name = raw_name.strip()
+                    if not name or len(name) < 2 or len(name) > 25:
+                        continue
+                    if not re.match(r"^[A-Z][A-Za-z\.'\- ]+$", name):
+                        continue
+                    slug = _name_to_slug(name)
+                    if slug:
+                        results.setdefault(slug, current_tier)
 
         if results:
             _write_cc_cache("pocketgamer", results)
