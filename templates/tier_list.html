@@ -67,6 +67,20 @@
   ('C',  '#c0c0c0', 'Situational',     '46–48% win rate — niche or requires specific comps.'),
   ('D',  '#808080', 'Struggling',      'Below 46% win rate — currently underperforming.')
 ] %}
+
+{% set major_conflicts = [] %}
+{% for letter, _color, _label, _desc in tier_config %}
+  {% for h in buckets[letter] if h.conflict_severity == 'major' %}
+    {% if major_conflicts.append(h) %}{% endif %}
+  {% endfor %}
+{% endfor %}
+{% if major_conflicts %}
+<section class="conflict-notice">
+  <p>⚠ <strong>{{ major_conflicts|length }} hero{{ 's' if major_conflicts|length != 1 else '' }}</strong>
+     show{{ '' if major_conflicts|length != 1 else 's' }} significant tier disagreement across
+     external sources this patch. Disputed rankings are flagged with ⚠ below.</p>
+</section>
+{% endif %}
 {% for letter, color, label, desc in tier_config %}
   <section class="tier-section tier-{{ letter|lower }}" style="--tier-color: {{ color }}">
     <h2>
@@ -79,7 +93,13 @@
     </h2>
     <div class="tier-row">
       {% for h in buckets[letter] %}
-        <a class="tier-card" href="{{ url_for('hero_page', slug=h.slug) }}" title="{{ h.name }} — WR {{ pct(h.win_rate) }}">
+        <a class="tier-card" href="{{ url_for('hero_page', slug=h.slug) }}"
+           title="{{ h.name }} — WR {{ pct(h.win_rate) }}{% if h.conflict_severity == 'major' %} (disputed across external sources){% elif h.conflict_severity == 'minor' %} (mixed signals across sources){% endif %}">
+          {% if h.conflict_severity == 'major' %}
+            <span class="tc-flag tc-flag-major" aria-label="Disputed ranking">⚠</span>
+          {% elif h.conflict_severity == 'minor' %}
+            <span class="tc-flag tc-flag-minor" aria-label="Mixed signals">⚡</span>
+          {% endif %}
           <img src="{{ h.head }}" alt="{{ h.name }}" width="88" height="88"
                loading="lazy" decoding="async">
           <span class="tc-name">{{ h.name }}</span>

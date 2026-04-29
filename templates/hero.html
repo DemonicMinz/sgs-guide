@@ -156,7 +156,22 @@
       <span class="role-badge" style="background: {{ role_color(role) }}22; border-color: {{ role_color(role) }}">{{ role }}</span>
       {% for lane in detail.lanes %}<span class="lane-badge">{{ lane }}</span>{% endfor %}
       <span class="tier-pill tier-{{ tier }}">Tier {{ tier }}</span>
+      {% if detail.conflict_severity == 'major' %}
+        <span class="conflict-badge conflict-major" title="External tier sources disagree significantly with this ranking — treat with caution.">⚠ Disputed</span>
+      {% elif detail.conflict_severity == 'minor' %}
+        <span class="conflict-badge conflict-minor" title="External tier sources show minor disagreement.">⚡ Mixed</span>
+      {% endif %}
     </div>
+    {% if detail.speciality %}
+    <div class="hero-speciality-tags">
+      {% for tag in detail.speciality %}
+      <span class="spec-tag">{{ tag }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if detail.editorial_note %}
+    <p class="editorial-note">📝 {{ detail.editorial_note }}</p>
+    {% endif %}
     <h1>{{ detail.name }} Guide 2026 — Best Build, Combos & Counters</h1>
     <p class="subtitle">
       {{ detail.name }} is a {{ role|lower }} hero with {{ detail.difficulty_label|lower }} difficulty.

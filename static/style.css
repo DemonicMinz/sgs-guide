@@ -2061,6 +2061,85 @@ h3 { font-size: 1.1rem; }
   .stale-banner-inner { padding: 9px 12px; font-size: .88rem; }
 }
 
+/* Hero speciality tags — surfaced from /api/heroes/{id} */
+.hero-speciality-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+.spec-tag {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
+/* Cross-source consensus signals */
+.conflict-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: help;
+}
+.conflict-badge.conflict-major {
+  background: rgba(255, 77, 109, 0.18);
+  border: 1px solid rgba(255, 77, 109, 0.45);
+  color: #ffb3c1;
+}
+.conflict-badge.conflict-minor {
+  background: rgba(255, 184, 77, 0.15);
+  border: 1px solid rgba(255, 184, 77, 0.4);
+  color: #ffe3b3;
+}
+.editorial-note {
+  font-size: 0.78rem;
+  opacity: 0.7;
+  margin: 6px 0 0;
+  padding: 6px 10px;
+  border-left: 2px solid rgba(255,255,255,0.2);
+}
+.conflict-notice {
+  margin: 16px 0;
+  padding: 10px 14px;
+  background: rgba(255, 184, 77, 0.08);
+  border: 1px solid rgba(255, 184, 77, 0.3);
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+.conflict-notice p { margin: 0; }
+.conflict-notice a { color: #ffd28a; }
+
+/* Tier-card conflict flags (small overlay on tier list cards) */
+.tier-card { position: relative; }
+.tc-flag {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 0.78rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  pointer-events: none;
+}
+.tc-flag-major {
+  background: rgba(255, 77, 109, 0.85);
+  color: #fff;
+}
+.tc-flag-minor {
+  background: rgba(255, 184, 77, 0.85);
+  color: #1a1a1a;
+}
+
 /* Counter items — derived from hero speciality tags + role */
 .counter-items-section {
   margin: 24px 0 0;

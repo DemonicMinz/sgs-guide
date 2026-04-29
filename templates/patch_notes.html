@@ -92,6 +92,20 @@
   </p>
 </section>
 
+{% set major_count = (meta_definers|selectattr('conflict_severity','equalto','major')|list|length)
+                    + (by_pick|selectattr('conflict_severity','equalto','major')|list|length)
+                    + (by_ban|selectattr('conflict_severity','equalto','major')|list|length)
+                    + (under_radar|selectattr('conflict_severity','equalto','major')|list|length)
+                    + (struggling|selectattr('conflict_severity','equalto','major')|list|length) %}
+{% if major_count %}
+<section class="conflict-notice">
+  <p>⚠ <strong>{{ major_count }} hero{{ 's' if major_count != 1 else '' }}</strong>
+     in this report show significant tier disagreement across external sources.
+     Disputed rankings are flagged with ⚠ on the
+     <a href="{{ url_for('tier_list_page') }}">tier list</a>.</p>
+</section>
+{% endif %}
+
 {% if meta_definers %}
 <section class="panel">
   <h2>Meta Definers — SS-Tier Heroes (54%+ Win Rate)</h2>

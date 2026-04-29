@@ -61,6 +61,17 @@
   <p>What's dominating ranked right now. Pulled from real match data, refreshed {{ updated }}.</p>
 </section>
 
+{% set major_count = (by_wr|selectattr('conflict_severity','equalto','major')|list|length)
+                    + (by_pick|selectattr('conflict_severity','equalto','major')|list|length)
+                    + (by_ban|selectattr('conflict_severity','equalto','major')|list|length) %}
+{% if major_count %}
+<section class="conflict-notice">
+  <p>⚠ <strong>{{ major_count }} hero{{ 's' if major_count != 1 else '' }}</strong>
+     in the meta lists below show significant tier disagreement across external sources.
+     See the <a href="{{ url_for('tier_list_page') }}">tier list</a> for the disputed-ranking flags.</p>
+</section>
+{% endif %}
+
 <section class="meta-grid">
   <div class="meta-col">
     <h2>Top 10 Win Rate</h2>

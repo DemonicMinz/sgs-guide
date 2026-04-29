@@ -22,6 +22,8 @@ from flask import (
 )
 from werkzeug.middleware.proxy_fix import ProxyFix
 
+from crosscheck import run_crosscheck
+
 try:
     from flask_compress import Compress
     _HAS_COMPRESS = True
@@ -707,6 +709,33 @@ def get_academy_builds(hero_id: int) -> list[dict]:
     return parse_academy_builds(payload, hero_id)
 
 
+_CROSSCHECK_LOCK = threading.Lock()
+_CROSSCHECK_CACHE: dict[str, Any] = {"ts": 0.0, "data": {}}
+_CROSSCHECK_TTL = 6 * 60 * 60  # 6h - matches CACHE_SECONDS
+
+
+def get_crosscheck_for(heroes: list[dict]) -> dict[str, dict]:
+    """TTL-cached wrapper around run_crosscheck() so we don't refetch every
+    request. Keyed by the hero set (rank), but in practice always called with
+    'all' from get_tier_list, so a single shared 6h cache is enough."""
+    with _CROSSCHECK_LOCK:
+        if (
+            _CROSSCHECK_CACHE["data"]
+            and (time.time() - _CROSSCHECK_CACHE["ts"]) < _CROSSCHECK_TTL
+        ):
+            return _CROSSCHECK_CACHE["data"]  # type: ignore[return-value]
+    try:
+        result = run_crosscheck(heroes)
+    except Exception as exc:  # noqa: BLE001
+        # Never crash the site if crosscheck fails - degrade to empty.
+        log.warning("[crosscheck] run_crosscheck failed: %s", exc)
+        result = {}
+    with _CROSSCHECK_LOCK:
+        _CROSSCHECK_CACHE["ts"] = time.time()
+        _CROSSCHECK_CACHE["data"] = result
+    return result
+
+
 def get_tier_list(rank: str = "all") -> list[dict]:
     # NB: default page size on this endpoint is 20, we need 200 to get all ~132 heroes.
     payload = api_get(
@@ -715,6 +744,20 @@ def get_tier_list(rank: str = "all") -> list[dict]:
     )
     heroes = parse_tier_ranking(payload)
     heroes.sort(key=lambda h: (h["win_rate"] or 0), reverse=True)
+
+    # Enrich each hero with cross-source consensus data. If scrapers all
+    # return zero (e.g. SPA pages we can't parse), each hero just gets the
+    # OpenMLBB tier alone with safe_to_publish=False.
+    cc = get_crosscheck_for(heroes)
+    for h in heroes:
+        info = cc.get(h.get("slug", ""), {})
+        h["consensus_tier"]    = info.get("consensus_tier", h["tier"])
+        h["confidence"]        = info.get("confidence", 0)
+        h["has_conflict"]      = info.get("has_conflict", False)
+        h["conflict_severity"] = info.get("conflict_severity", "none")
+        h["editorial_note"]    = info.get("editorial_note", "")
+        h["safe_to_publish"]   = info.get("safe_to_publish", False)
+        h["source_tiers"]      = info.get("source_tiers", {})
     return heroes
 
 
@@ -1723,6 +1766,17 @@ def hero_page(slug: str) -> str:
     # Counter items — derived from speciality tags + equipment catalogue
     counter_items = get_counter_items(detail, get_equipment_map())
 
+    # Cross-source consensus for this hero (if available). The tier list
+    # endpoint already runs the cross-check at warm time; we just look up
+    # the cached entry here so the hero page can render the same badge
+    # and editorial note as the tier list.
+    tier_data = get_tier_list("all")
+    cc_entry = next((h for h in tier_data if h["slug"] == slug), {})
+    detail["editorial_note"]    = cc_entry.get("editorial_note", "")
+    detail["conflict_severity"] = cc_entry.get("conflict_severity", "none")
+    detail["consensus_tier"]    = cc_entry.get("consensus_tier", "")
+    detail["confidence"]        = cc_entry.get("confidence", 0)
+
     # Resolve related hero names/slugs
     by_id = {h["id"]: h for h in heroes}
     def resolve(ids: list[int]) -> list[dict]:
@@ -2490,6 +2544,34 @@ def healthz_run() -> Response:
     """Manual trigger for a one-shot health probe (useful for cron + debugging)."""
     result = _health_once()
     return Response(json.dumps(result), mimetype="application/json")
+
+
+@app.route("/api/facebook-safe-list")
+def facebook_safe_list() -> Response:
+    """Heroes whose tier ranking is corroborated by enough independent sources
+    to publish on social channels (Facebook posts, etc.) without risking a
+    contradiction by a community fact-check. Filters tier_list by
+    safe_to_publish=True and returns only the high-confidence rows."""
+    tier_data = get_tier_list("all")
+    safe = [
+        {
+            "name":           h.get("name"),
+            "slug":           h.get("slug"),
+            "consensus_tier": h.get("consensus_tier"),
+            "openmlbb_tier":  h.get("tier"),
+            "confidence":     h.get("confidence"),
+            "win_rate":       h.get("win_rate"),
+            "source_tiers":   h.get("source_tiers", {}),
+        }
+        for h in tier_data
+        if h.get("safe_to_publish")
+    ]
+    body = {
+        "count":   len(safe),
+        "total":   len(tier_data),
+        "heroes":  safe,
+    }
+    return Response(json.dumps(body), mimetype="application/json")
 
 
 # --------------------------------------------------------------------------- #
