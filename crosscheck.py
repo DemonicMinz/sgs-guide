@@ -315,6 +315,34 @@ def _scrape_mlbbhub() -> dict[str, str]:
 # Hitting it directly is the canonical path the site itself uses.
 _MLBBIO_API = "https://mlbb.io/api/hero/hero-tiers"
 
+# mlbb.io's published `tier` label uses an unusually harsh scale - on a
+# 132-hero roster it labels ~60 heroes D and ~39 heroes C, while mlbb.gg
+# and mlbbhub label the same heroes A or B. Joining its tier directly
+# pulled consensus down on the majority of heroes (safe-list shrank
+# 93 -> 52). mlbb.io's underlying numeric `score` is still a useful
+# independent signal, so we re-bucket by score-rank percentile into a
+# distribution shaped like mlbb.gg's typical tier list:
+#   SS top 2.5% / S 19.5% / A 37% / B 20% / C 6% / D bottom 15%.
+_MLBBIO_PERCENTILE_BUCKETS: tuple[tuple[float, str], ...] = (
+    (0.025, "SS"),
+    (0.220, "S"),
+    (0.590, "A"),
+    (0.790, "B"),
+    (0.850, "C"),
+    (1.000, "D"),
+)
+
+
+def _score_rank_to_tier(rank: int, total: int) -> str:
+    """Map a 0-indexed score rank (0 = highest score) to a tier via percentile."""
+    if total <= 0:
+        return "D"
+    pct = (rank + 1) / total
+    for threshold, tier in _MLBBIO_PERCENTILE_BUCKETS:
+        if pct <= threshold:
+            return tier
+    return "D"
+
 
 def _scrape_mlbbio() -> dict[str, str]:
     """Returns {hero_slug: tier_label} from mlbb.io's tier-list JSON API.
@@ -322,10 +350,15 @@ def _scrape_mlbbio() -> dict[str, str]:
     The page at /hero-tier is a thin Next.js shell that calls
     /api/hero/hero-tiers client-side; we hit that endpoint directly.
     Schema: {"success": bool, "data": {"heroes": [{"hero_name": str,
-    "tier": "SS"|"S"|"A"|"B"|"C"|"D", ...}, ...]}}. On 403 / timeout /
-    parse failure, returns an empty dict so the rest of the pipeline
-    keeps working. Cached aggressively (24h) since the API is gated
-    behind anti-bot rules.
+    "tier": "SS"|..|"D", "score": float, ...}, ...]}}.
+
+    We rank heroes by `score` and re-bucket into our shared tier scale
+    rather than trusting mlbb.io's published `tier` field, which is
+    harsher than the rest of the community sources (see comment on
+    _MLBBIO_PERCENTILE_BUCKETS above). On 403 / timeout / parse failure,
+    returns an empty dict so the rest of the pipeline keeps working.
+    Cached aggressively (24h) since the API is gated behind anti-bot
+    rules.
     """
     cached = _read_cc_cache("mlbbio")
     if cached is not None:
@@ -357,17 +390,21 @@ def _scrape_mlbbio() -> dict[str, str]:
         payload = r.json()
 
         heroes = ((payload or {}).get("data") or {}).get("heroes") or []
-        for entry in heroes:
-            tier = _normalize_tier(entry.get("tier") or "")
-            if not tier:
-                continue
-            slug = _name_to_slug(entry.get("hero_name") or "")
+        ranked = sorted(
+            (h for h in heroes
+             if isinstance(h.get("score"), (int, float)) and h.get("hero_name")),
+            key=lambda h: h["score"],
+            reverse=True,
+        )
+        total = len(ranked)
+        for rank, entry in enumerate(ranked):
+            slug = _name_to_slug(entry["hero_name"])
             if slug:
-                results.setdefault(slug, tier)
+                results.setdefault(slug, _score_rank_to_tier(rank, total))
 
         if results:
             _write_cc_cache("mlbbio", results)
-            log.info("[mlbb.io] Fetched %d hero tiers", len(results))
+            log.info("[mlbb.io] Fetched %d hero tiers (rebucketed by score)", len(results))
         else:
             log.warning(
                 "[mlbb.io] Parsed 0 tiers - API schema may have changed. "
