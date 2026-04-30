@@ -768,6 +768,8 @@ def get_tier_list(rank: str = "all") -> list[dict]:
         h["editorial_note"]    = info.get("editorial_note", "")
         h["safe_to_publish"]   = info.get("safe_to_publish", False)
         h["source_tiers"]      = info.get("source_tiers", {})
+        h["data_source_count"] = info.get("data_source_count", 0)
+        h["verified_strongly"] = info.get("verified_strongly", False)
     return heroes
 
 
@@ -2576,21 +2578,26 @@ def facebook_safe_list() -> Response:
     tier_data = get_tier_list("all")
     safe = [
         {
-            "name":           h.get("name"),
-            "slug":           h.get("slug"),
-            "consensus_tier": h.get("consensus_tier"),
-            "openmlbb_tier":  h.get("tier"),
-            "confidence":     h.get("confidence"),
-            "win_rate":       h.get("win_rate"),
-            "source_tiers":   h.get("source_tiers", {}),
+            "name":              h.get("name"),
+            "slug":              h.get("slug"),
+            "consensus_tier":    h.get("consensus_tier"),
+            "openmlbb_tier":     h.get("tier"),
+            "confidence":        h.get("confidence"),
+            "win_rate":          h.get("win_rate"),
+            "source_tiers":      h.get("source_tiers", {}),
+            "data_source_count": h.get("data_source_count", 0),
+            "verified_strongly": h.get("verified_strongly", False),
         }
         for h in tier_data
         if h.get("safe_to_publish")
     ]
+    safe.sort(key=lambda r: r.get("confidence") or 0, reverse=True)
     body = {
-        "count":   len(safe),
-        "total":   len(tier_data),
-        "heroes":  safe,
+        "count":             len(safe),
+        "total":             len(tier_data),
+        "data_sources":      ["openmlbb", "mlbbgg", "mlbbhub", "mlbbio"],
+        "editorial_sources": ["pocketgamer"],
+        "heroes":            safe,
     }
     return Response(json.dumps(body), mimetype="application/json")
 

@@ -6,6 +6,7 @@ conflict flag so the Flask layer can surface accurate, defensible data.
 Sources (verified April 28, 2026):
   - mlbb.gg        - automated, daily, Mythic Glory weighted (data)
   - mlbbhub.com    - automated, daily, Patch 2.1.67 (data)
+  - mlbb.io        - data-driven, bot-protected, 24h cache (data)
   - pocketgamer    - human curated, ~monthly (editorial)
 
 Editorial sources can disagree with raw win-rate data on heroes with
@@ -47,13 +48,35 @@ HEADERS = {
 SOURCES = {
     "mlbbgg":      "https://mlbb.gg/tierlist",
     "mlbbhub":     "https://mlbbhub.com/tier-list",
+    "mlbbio":      "https://mlbb.io/hero-tier",
     "pocketgamer": "https://www.pocketgamer.com/mobile-legends-bang-bang/tier-list/",
 }
 
 CACHE_TTL = {
     "mlbbgg":      12 * 60 * 60,   # 12h - automated, updates daily
     "mlbbhub":     12 * 60 * 60,   # 12h - automated, updates daily
+    "mlbbio":      24 * 60 * 60,   # 24h - bot-protected; minimise request rate
     "pocketgamer": 72 * 60 * 60,   # 72h - editorial, updates ~monthly
+}
+
+# mlbb.io has bot protection - needs full browser-like headers to bypass 403.
+HEADERS_BROWSER = {
+    "User-Agent": (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+    ),
+    "Accept": (
+        "text/html,application/xhtml+xml,application/xml;q=0.9,"
+        "image/avif,image/webp,*/*;q=0.8"
+    ),
+    "Accept-Language": "en-US,en;q=0.9",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Cache-Control": "max-age=0",
 }
 
 # Higher number = stronger tier. Spread of 4 = SS vs B (major conflict).
@@ -90,6 +113,18 @@ def _name_to_slug(name: str) -> str:
     s = re.sub(r"[^\w\s-]+", "", s)
     s = re.sub(r"[\s_]+", "-", s)
     return s.strip("-")
+
+
+def _normalize_tier(raw: str) -> str | None:
+    """Normalise tier labels across sources. Returns None if invalid.
+    `S+` and `s+` map to `SS`; everything else is uppercased and validated
+    against TIER_SCORES."""
+    if not raw:
+        return None
+    cleaned = raw.strip().upper().replace("+", "S")
+    if cleaned in TIER_SCORES:
+        return cleaned
+    return None
 
 
 # --------------------------------------------------------------------------- #
@@ -275,6 +310,102 @@ def _scrape_mlbbhub() -> dict[str, str]:
     return results
 
 
+def _scrape_mlbbio() -> dict[str, str]:
+    """Returns {hero_slug: tier_label} from mlbb.io.
+
+    mlbb.io has anti-bot protection - we send realistic browser headers
+    (HEADERS_BROWSER) and cache aggressively (24h). On 403 / timeout /
+    parse failure, returns an empty dict so the rest of the pipeline
+    keeps working.
+    """
+    cached = _read_cc_cache("mlbbio")
+    if cached is not None:
+        log.info("[mlbb.io] Serving from cache (%d heroes)", len(cached))
+        return cached
+
+    results: dict[str, str] = {}
+    try:
+        r = httpx.get(
+            SOURCES["mlbbio"],
+            headers=HEADERS_BROWSER,
+            timeout=20.0,
+            follow_redirects=True,
+        )
+
+        if r.status_code == 403:
+            log.warning(
+                "[mlbb.io] Got 403 - bot protection blocked us. "
+                "Try updating browser headers or wait for cache TTL."
+            )
+            return {}
+
+        r.raise_for_status()
+        html = r.text
+
+        # Strategy 1: data-tier attribute on parent containers.
+        tier_blocks = re.findall(
+            r'data-tier=["\'](SS?|S\+?|A|B|C|D)["\'][^>]*>(.*?)(?=data-tier=|</section>|$)',
+            html, re.DOTALL | re.IGNORECASE,
+        )
+        for tier_raw, block_content in tier_blocks:
+            tier = _normalize_tier(tier_raw)
+            if not tier:
+                continue
+            hero_names = re.findall(
+                r'href=["\']/hero/[^"\']+["\'][^>]*>([^<]{2,30})</a',
+                block_content, re.IGNORECASE,
+            )
+            for name in hero_names:
+                slug = _name_to_slug(name.strip())
+                if slug and slug not in results:
+                    results[slug] = tier
+
+        # Strategy 2: tier badge class with nearby hero name.
+        if not results:
+            pairs = re.findall(
+                r'class=["\'][^"\']*tier-(SS?|S\+?|A|B|C|D)[^"\']*["\'][^>]*>'
+                r'.*?<(?:span|h\d|div)[^>]*>([A-Z][a-zA-Z\s\.\-\']{1,28})</',
+                html, re.DOTALL | re.IGNORECASE,
+            )
+            for tier_raw, name_raw in pairs:
+                tier = _normalize_tier(tier_raw)
+                if not tier:
+                    continue
+                slug = _name_to_slug(name_raw.strip())
+                if slug:
+                    results[slug] = tier
+
+        # Strategy 3: hero slug in URL with nearby tier label text.
+        if not results:
+            hero_slug_with_tier = re.findall(
+                r'href=["\']/hero/([a-z0-9\-]+)["\'][^>]*>.*?'
+                r'(?:tier|Tier)[\s:]*([SsAaBbCcDd]\+?)',
+                html, re.DOTALL,
+            )
+            for slug, tier_raw in hero_slug_with_tier:
+                tier = _normalize_tier(tier_raw)
+                if tier:
+                    results[slug] = tier
+
+        if results:
+            _write_cc_cache("mlbbio", results)
+            log.info("[mlbb.io] Fetched %d hero tiers", len(results))
+        else:
+            log.warning(
+                "[mlbb.io] Parsed 0 tiers - HTML structure may have changed. "
+                "Inspect %s manually and update regex.", SOURCES["mlbbio"]
+            )
+
+    except httpx.HTTPStatusError as exc:
+        log.warning("[mlbb.io] HTTP error: %s", exc)
+    except httpx.TimeoutException:
+        log.warning("[mlbb.io] Request timed out after 20s")
+    except Exception as exc:  # noqa: BLE001
+        log.warning("[mlbb.io] Unexpected error: %s", exc)
+
+    return results
+
+
 # Word lists used to filter false positives when parsing PG's prose-heavy
 # role sections. Anything containing one of these tokens is rejected as
 # a hero name.
@@ -412,11 +543,24 @@ def compute_crosscheck(
                     f"high-rank or coordinated play differences vs general ranked data."
                 )
 
-    enough_data_sources = len(valid_data) >= 3  # openmlbb + 2 external
+    # Bonus: heroes where ALL 4 data sources (openmlbb + 3 externals) returned
+    # AND agree exactly get +5 confidence. Universal agreement = guaranteed
+    # safe to publish on social.
+    all_four_agree = len(valid_data) == 4 and spread == 0
+    if all_four_agree:
+        confidence = min(100, confidence + 5)
+
+    enough_data_sources = len(valid_data) >= 3  # openmlbb + 2 external (mlbbio may fail)
     safe_to_publish = (
         enough_data_sources
         and confidence >= 70
         and conflict_severity != "major"
+    )
+
+    # How many of the 3 external data-driven sources returned a tier for this
+    # hero. 3 = fully verified. Editorial sources (pocketgamer) don't count.
+    data_source_count = sum(
+        1 for src in data_tiers if src in ("mlbbgg", "mlbbhub", "mlbbio")
     )
 
     return {
@@ -427,15 +571,23 @@ def compute_crosscheck(
         "editorial_note":    editorial_note,
         "safe_to_publish":   safe_to_publish,
         "source_tiers":      {**data_tiers, **editorial_tiers},
+        "data_source_count": data_source_count,
+        "verified_strongly": data_source_count >= 3,
     }
 
 
 def run_crosscheck(heroes: list[dict]) -> dict[str, dict]:
-    """Orchestrate scrapers + consensus per hero. Returns {slug: result_dict}."""
+    """Orchestrate scrapers + consensus per hero. Returns {slug: result_dict}.
+
+    Each scraper is independent: if one fails (returns {}), the others still
+    feed the consensus engine. mlbb.io specifically may return {} on days
+    where its bot protection rejects us; the pipeline degrades gracefully.
+    """
     log.info("[CrossCheck] Running for %d heroes...", len(heroes))
 
     mlbbgg = _scrape_mlbbgg()
     hub    = _scrape_mlbbhub()
+    mlbbio = _scrape_mlbbio()
     pg     = _scrape_pocketgamer()
 
     results: dict[str, dict] = {}
@@ -446,6 +598,7 @@ def run_crosscheck(heroes: list[dict]) -> dict[str, dict]:
         data_tiers: dict[str, str] = {}
         if slug in mlbbgg: data_tiers["mlbbgg"]  = mlbbgg[slug]
         if slug in hub:    data_tiers["mlbbhub"] = hub[slug]
+        if slug in mlbbio: data_tiers["mlbbio"]  = mlbbio[slug]
 
         editorial_tiers: dict[str, str] = {}
         if slug in pg: editorial_tiers["pocketgamer"] = pg[slug]
@@ -453,9 +606,12 @@ def run_crosscheck(heroes: list[dict]) -> dict[str, dict]:
         results[slug] = compute_crosscheck(slug, openmlbb_tier, data_tiers, editorial_tiers)
 
     conflicts = [(s, r) for s, r in results.items() if r["has_conflict"]]
-    log.info("[CrossCheck] Done. %d conflicts, %d editorial notes.",
-             len(conflicts),
-             sum(1 for r in results.values() if r.get("editorial_note")))
+    log.info(
+        "[CrossCheck] Done. %d conflicts, %d editorial notes "
+        "(sources: openmlbb + mlbbgg + mlbbhub + mlbbio + pg).",
+        len(conflicts),
+        sum(1 for r in results.values() if r.get("editorial_note")),
+    )
 
     for slug, r in conflicts:
         name = next((h["name"] for h in heroes if h.get("slug") == slug), slug)
