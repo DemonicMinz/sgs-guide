@@ -214,8 +214,8 @@ function gtag_report_conversion(url) {
     </a>
     <nav class="site-nav" aria-label="Primary">
       <a href="{{ url_for('index') }}"{% if request.endpoint == 'index' %} aria-current="page"{% endif %}>Heroes</a>
-      <a href="{{ url_for('tier_list_page') }}"{% if request.endpoint == 'tier_list_page' %} aria-current="page"{% endif %}>Tier List</a>
-      <a href="{{ url_for('meta_page') }}"{% if request.endpoint == 'meta_page' %} aria-current="page"{% endif %}>Meta</a>
+      <a href="{{ url_for('tier_list_page') }}"{% if request.endpoint == 'tier_list_page' %} aria-current="page"{% endif %}>Tier List/Meta</a>
+      <a href="{{ url_for('meta_page') }}"{% if request.endpoint == 'meta_page' %} aria-current="page"{% endif %}>Stats</a>
       <a href="{{ url_for('patch_notes_page') }}"{% if request.endpoint == 'patch_notes_page' %} aria-current="page"{% endif %}>Patch Notes</a>
       {% if topup_enabled %}
       <a href="{{ url_for('topup') }}"{% if request.endpoint in ('topup', 'topup_mlbb') %} aria-current="page"{% endif %}>Top Up</a>
@@ -283,8 +283,8 @@ function gtag_report_conversion(url) {
     <p>&copy; {{ YEAR }} {{ SITE_NAME }}. Not affiliated with Moonton.</p>
     <p class="foot-links">
       <a href="{{ url_for('index') }}">Heroes</a> ·
-      <a href="{{ url_for('tier_list_page') }}">Tier List</a> ·
-      <a href="{{ url_for('meta_page') }}">Meta</a> ·
+      <a href="{{ url_for('tier_list_page') }}">Tier List/Meta</a> ·
+      <a href="{{ url_for('meta_page') }}">Stats</a> ·
       <a href="{{ url_for('patch_notes_page') }}">Patch Notes</a> ·
       {% if topup_enabled %}
       <a href="{{ url_for('topup') }}">Top Up</a> ·

@@ -2224,7 +2224,7 @@ def meta_page() -> str:
         by_ban=by_ban,
         updated=updated,
         page_title=(
-            f"MLBB Meta {current_month} — Top Picks, Highest Win "
+            f"MLBB Stats {current_month} — Top Picks, Highest Win "
             f"Rate & Most Banned | {SITE_NAME}"
         ),
         page_desc=(
