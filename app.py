@@ -2165,9 +2165,13 @@ def tier_list_page() -> str:
         rank = "all"
     heroes = get_tier_list(rank)
 
+    # Bucket by consensus_tier (cross-checked across 4 sources) rather than
+    # the raw OpenMLBB win-rate cutoff. The latter put high-WR but unpicked
+    # niche heroes (Masha, Lolita) into SS while burying meta-defining picks
+    # like Harley that have a slightly lower WR but heavy pick + ban presence.
     buckets = {"SS": [], "S": [], "A": [], "B": [], "C": [], "D": []}
     for h in heroes:
-        buckets[h["tier"]].append(h)
+        buckets[h.get("consensus_tier") or h["tier"]].append(h)
 
     updated = cache_age_text(make_cache_key(
         "/api/heroes/rank",
@@ -2181,14 +2185,14 @@ def tier_list_page() -> str:
         total=len(heroes),
         updated=updated,
         page_title=(
-            f"MLBB Tier List {current_month} — Live Win Rates, "
+            f"MLBB Tier List {current_month} — Cross-Verified, "
             f"SS–D Ranked Heroes | {SITE_NAME}"
         ),
         page_desc=(
             f"Live MLBB tier list for {current_month}: {len(heroes)} heroes "
-            f"ranked SS through D by real ranked win rate. Updated every 6 "
-            f"hours from the latest Epic–Mythic Glory games. See the best "
-            f"Mobile Legends heroes right now."
+            f"ranked SS through D by 4-source consensus — live ranked win "
+            f"rate cross-checked against mlbb.gg, mlbbhub and mlbb.io. "
+            f"Updated every 6 hours from the latest Epic–Mythic Glory games."
         ),
         page_keywords=(
             f"mlbb tier list {current_month.lower()}, mobile legends tier "
