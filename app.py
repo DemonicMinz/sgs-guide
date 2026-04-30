@@ -68,6 +68,11 @@ YANDEX_VERIFICATION = os.getenv("YANDEX_SITE_VERIFICATION", "")
 INDEXNOW_KEY = (os.getenv("INDEXNOW_KEY") or "").strip()
 # Validation below after `log` is initialized — deferred so we don't crash at import.
 
+# Feature flag — flip to "true" in .env to expose the Top Up section
+# (routes, nav links, sitemap entries). All top-up code stays loaded on disk
+# regardless; this only gates user-facing entry points.
+TOPUP_ENABLED = os.getenv("TOPUP_ENABLED", "false").strip().lower() in ("1", "true", "yes", "on")
+
 # Geo-targeting — hard-coded to Singapore for this site's audience.
 GEO_REGION = "SG"
 GEO_PLACENAME = "Singapore"
@@ -107,12 +112,17 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 # Routes live in topup_payment.py; HitPay + MooGold clients are side modules.
 # Registration is lazy-safe: if env vars are missing, endpoints degrade to
 # the mock supplier and refuse to create real HitPay payments.
-try:
-    from topup_payment import bp as topup_bp
-    app.register_blueprint(topup_bp)
-    logging.getLogger(__name__).info("Registered topup_payment blueprint at /api/topup")
-except Exception as _e:  # pragma: no cover
-    logging.getLogger(__name__).exception("Failed to register topup blueprint: %s", _e)
+# Gated by TOPUP_ENABLED — when false, the module is never imported and the
+# /api/topup/* endpoints simply do not exist.
+if TOPUP_ENABLED:
+    try:
+        from topup_payment import bp as topup_bp
+        app.register_blueprint(topup_bp)
+        logging.getLogger(__name__).info("Registered topup_payment blueprint at /api/topup")
+    except Exception as _e:  # pragma: no cover
+        logging.getLogger(__name__).exception("Failed to register topup blueprint: %s", _e)
+else:
+    logging.getLogger(__name__).info("Top Up feature disabled (TOPUP_ENABLED=false). Skipping blueprint registration.")
 
 # ---- Response compression (brotli > gzip > deflate) ---------------------- #
 # Cuts HTML/CSS/JS/XML bytes 70-85% on the wire. Biggest single perf win.
@@ -1601,6 +1611,8 @@ def inject_globals() -> dict[str, Any]:
         "LANG_TAG": LANG_TAG,
         "YEAR": datetime.now(timezone.utc).year,
         "TODAY_ISO": datetime.now(timezone.utc).date().isoformat(),
+        # Feature flag — controls visibility of /topup nav links and entry points.
+        "topup_enabled": TOPUP_ENABLED,
         # Freshness signals — top-ranking MLBB sites (mlbbmeta, bittopup,
         # esports.gg) always include the current month in titles and an
         # explicit "Updated [Month Day, Year]" badge. Google heavily boosts
@@ -2225,6 +2237,8 @@ def meta_page() -> str:
 
 @app.route("/topup")
 def topup() -> str:
+    if not TOPUP_ENABLED:
+        abort(404)
     return render_template(
         "topup.html",
         page_title=f"Instant Game Top Up — Cheapest MLBB Diamonds in SG | {SITE_NAME}",
@@ -2237,6 +2251,8 @@ def topup() -> str:
 
 @app.route("/topup/mlbb")
 def topup_mlbb() -> str:
+    if not TOPUP_ENABLED:
+        abort(404)
     return render_template(
         "topup_mlbb.html",
         page_title=f"MLBB Diamond Top Up — Instant & Cheapest | {SITE_NAME}",
@@ -2250,6 +2266,8 @@ def topup_mlbb() -> str:
 @app.route("/topup/status/<ref>")
 def topup_status(ref: str) -> str:
     """HitPay redirect lands here after checkout — shows live order status."""
+    if not TOPUP_ENABLED:
+        abort(404)
     # Light sanity check on the reference format
     if not re.fullmatch(r"sgs-[a-f0-9]{8,32}", ref):
         abort(404)
@@ -2308,10 +2326,13 @@ def sitemap_core() -> Response:
         ("/tier-list?rank=epic",   "0.7", "daily"),
         ("/meta", "0.9", "daily"),
         ("/patch-notes", "0.9", "daily"),
-        ("/topup", "0.8", "weekly"),
-        ("/topup/mlbb", "0.8", "weekly"),
         ("/about", "0.5", "monthly"),
     ]
+    if TOPUP_ENABLED:
+        urls.extend([
+            ("/topup", "0.8", "weekly"),
+            ("/topup/mlbb", "0.8", "weekly"),
+        ])
     parts = ['<?xml version="1.0" encoding="UTF-8"?>',
              '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
     for path, prio, freq in urls:
