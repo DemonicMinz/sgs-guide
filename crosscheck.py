@@ -310,13 +310,22 @@ def _scrape_mlbbhub() -> dict[str, str]:
     return results
 
 
-def _scrape_mlbbio() -> dict[str, str]:
-    """Returns {hero_slug: tier_label} from mlbb.io.
+# mlbb.io's /hero-tier page is an empty Next.js shell - the tier table is
+# fetched client-side from this JSON endpoint and rendered in the browser.
+# Hitting it directly is the canonical path the site itself uses.
+_MLBBIO_API = "https://mlbb.io/api/hero/hero-tiers"
 
-    mlbb.io has anti-bot protection - we send realistic browser headers
-    (HEADERS_BROWSER) and cache aggressively (24h). On 403 / timeout /
+
+def _scrape_mlbbio() -> dict[str, str]:
+    """Returns {hero_slug: tier_label} from mlbb.io's tier-list JSON API.
+
+    The page at /hero-tier is a thin Next.js shell that calls
+    /api/hero/hero-tiers client-side; we hit that endpoint directly.
+    Schema: {"success": bool, "data": {"heroes": [{"hero_name": str,
+    "tier": "SS"|"S"|"A"|"B"|"C"|"D", ...}, ...]}}. On 403 / timeout /
     parse failure, returns an empty dict so the rest of the pipeline
-    keeps working.
+    keeps working. Cached aggressively (24h) since the API is gated
+    behind anti-bot rules.
     """
     cached = _read_cc_cache("mlbbio")
     if cached is not None:
@@ -324,10 +333,15 @@ def _scrape_mlbbio() -> dict[str, str]:
         return cached
 
     results: dict[str, str] = {}
+    headers = {
+        **HEADERS_BROWSER,
+        "Accept": "application/json, text/plain, */*",
+        "Referer": "https://mlbb.io/hero-tier",
+    }
     try:
         r = httpx.get(
-            SOURCES["mlbbio"],
-            headers=HEADERS_BROWSER,
+            _MLBBIO_API,
+            headers=headers,
             timeout=20.0,
             follow_redirects=True,
         )
@@ -340,60 +354,24 @@ def _scrape_mlbbio() -> dict[str, str]:
             return {}
 
         r.raise_for_status()
-        html = r.text
+        payload = r.json()
 
-        # Strategy 1: data-tier attribute on parent containers.
-        tier_blocks = re.findall(
-            r'data-tier=["\'](SS?|S\+?|A|B|C|D)["\'][^>]*>(.*?)(?=data-tier=|</section>|$)',
-            html, re.DOTALL | re.IGNORECASE,
-        )
-        for tier_raw, block_content in tier_blocks:
-            tier = _normalize_tier(tier_raw)
+        heroes = ((payload or {}).get("data") or {}).get("heroes") or []
+        for entry in heroes:
+            tier = _normalize_tier(entry.get("tier") or "")
             if not tier:
                 continue
-            hero_names = re.findall(
-                r'href=["\']/hero/[^"\']+["\'][^>]*>([^<]{2,30})</a',
-                block_content, re.IGNORECASE,
-            )
-            for name in hero_names:
-                slug = _name_to_slug(name.strip())
-                if slug and slug not in results:
-                    results[slug] = tier
-
-        # Strategy 2: tier badge class with nearby hero name.
-        if not results:
-            pairs = re.findall(
-                r'class=["\'][^"\']*tier-(SS?|S\+?|A|B|C|D)[^"\']*["\'][^>]*>'
-                r'.*?<(?:span|h\d|div)[^>]*>([A-Z][a-zA-Z\s\.\-\']{1,28})</',
-                html, re.DOTALL | re.IGNORECASE,
-            )
-            for tier_raw, name_raw in pairs:
-                tier = _normalize_tier(tier_raw)
-                if not tier:
-                    continue
-                slug = _name_to_slug(name_raw.strip())
-                if slug:
-                    results[slug] = tier
-
-        # Strategy 3: hero slug in URL with nearby tier label text.
-        if not results:
-            hero_slug_with_tier = re.findall(
-                r'href=["\']/hero/([a-z0-9\-]+)["\'][^>]*>.*?'
-                r'(?:tier|Tier)[\s:]*([SsAaBbCcDd]\+?)',
-                html, re.DOTALL,
-            )
-            for slug, tier_raw in hero_slug_with_tier:
-                tier = _normalize_tier(tier_raw)
-                if tier:
-                    results[slug] = tier
+            slug = _name_to_slug(entry.get("hero_name") or "")
+            if slug:
+                results.setdefault(slug, tier)
 
         if results:
             _write_cc_cache("mlbbio", results)
             log.info("[mlbb.io] Fetched %d hero tiers", len(results))
         else:
             log.warning(
-                "[mlbb.io] Parsed 0 tiers - HTML structure may have changed. "
-                "Inspect %s manually and update regex.", SOURCES["mlbbio"]
+                "[mlbb.io] Parsed 0 tiers - API schema may have changed. "
+                "Inspect %s manually.", _MLBBIO_API
             )
 
     except httpx.HTTPStatusError as exc:
