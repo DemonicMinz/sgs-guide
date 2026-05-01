@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block schema %}
+{# Article schema with dateModified that updates every render — the freshness
+   signal is the whole point of this page. Google ranks "now" / "current"
+   queries by recency, not just by content quality. #}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "@id": "{{ SITE_URL }}{{ canonical }}#article",
+  "isPartOf": { "@id": "{{ SITE_URL }}/#website" },
+  "publisher": { "@id": "{{ SITE_URL }}/#organization" },
+  "author": { "@id": "{{ SITE_URL }}/#organization" },
+  "headline": "MLBB Meta Right Now — {{ CURRENT_MONTH }} {{ YEAR }} Live Tier List",
+  "description": {{ page_desc | tojson }},
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "{{ SITE_URL }}{{ canonical }}" },
+  "datePublished": "{{ TODAY_ISO }}",
+  "dateModified": "{{ updated_iso }}",
+  "inLanguage": "{{ LANG_TAG }}",
+  "about": {
+    "@type": "VideoGame",
+    "name": "Mobile Legends: Bang Bang",
+    "alternateName": ["MLBB", "Mobile Legends"],
+    "applicationCategory": "GameApplication"
+  }
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "{{ SITE_URL }}/" },
+    { "@type": "ListItem", "position": 2, "name": "Meta Right Now", "item": "{{ SITE_URL }}{{ canonical }}" }
+  ]
+}
+</script>
+
+{# FAQ schema is the single biggest "now"-query SERP win. Google expands these
+   into inline accordion results for queries like "what is the current mlbb
+   meta", which is exactly the long-tail pattern we're targeting here. #}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "inLanguage": "{{ LANG_TAG }}",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is the current MLBB meta in {{ CURRENT_MONTH }} {{ YEAR }}?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The current Mobile Legends meta is dominated by {% for h in top_wr[:3] %}{{ h.name }}{% if not loop.last %}, {% endif %}{% endfor %}, with win rates above {{ pct((top_wr[0].win_rate or 0), 1) }} in ranked play. Most banned right now: {% for h in top_ban[:3] %}{{ h.name }}{% if not loop.last %}, {% endif %}{% endfor %}. Data refreshed {{ updated }}, pulled live from real Epic-to-Mythic-Glory ranked matches."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Who is the best hero in MLBB right now?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "{{ top_wr[0].name }} has the highest win rate ({{ pct(top_wr[0].win_rate, 1) }}) in the current MLBB meta. The top 5 by win rate are {% for h in top_wr[:5] %}{{ h.name }}{% if not loop.last %}, {% endif %}{% endfor %}. These rankings update every 6 hours."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Who should I ban in MLBB right now?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The most banned heroes in {{ CURRENT_MONTH }} {{ YEAR }} are {% for h in top_ban[:5] %}{{ h.name }} ({{ pct(h.ban_rate, 1) }}){% if not loop.last %}, {% endif %}{% endfor %}. High ban rate is the strongest signal of a hero being feared — or outright broken — in the current meta."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Which MLBB heroes are hidden OP right now?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "{% if hidden_op %}Hidden-OP picks (high win rate, low pick rate) right now: {% for h in hidden_op[:5] %}{{ h.name }} ({{ pct(h.win_rate, 1) }} WR){% if not loop.last %}, {% endif %}{% endfor %}. These heroes are winning games but few players have caught on yet — pick them before the meta does.{% else %}No clear hidden-OP picks in the current meta — the strongest heroes are also being heavily picked.{% endif %}"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "When was this MLBB meta updated?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Last refresh: {{ updated }}. The data on this page is auto-pulled every 6 hours from live ranked match statistics across Epic, Legend, Mythic, Mythic Honor and Mythic Glory tiers."
+      }
+    }
+  ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="page-head meta-now-head">
+  <p class="meta-now-kicker">Live · Updated {{ updated }}</p>
+  <h1>MLBB Meta Right Now &mdash; {{ CURRENT_MONTH }} {{ YEAR }}</h1>
+  <p class="lede">
+    What's actually winning Mobile Legends ranked games <strong>this week</strong>.
+    No outdated guides, no opinion-based tier lists &mdash; pulled live from real Epic to
+    Mythic Glory matches and refreshed every 6 hours. Last update: <strong>{{ updated }}</strong>.
+  </p>
+  <p class="meta-now-stats">
+    <span class="meta-now-stat"><strong>{{ total_heroes }}</strong> heroes ranked</span>
+    <span class="meta-now-stat-sep">·</span>
+    <span class="meta-now-stat"><strong>{{ pct(top_wr[0].win_rate, 1) }}</strong> top win rate</span>
+    <span class="meta-now-stat-sep">·</span>
+    <span class="meta-now-stat"><strong>{{ pct(top_ban[0].ban_rate, 1) }}</strong> top ban rate</span>
+  </p>
+</section>
+
+{# Section 1 — Dominating the meta (top WR). Targets "best mlbb heroes right
+   now", "mlbb top heroes [month]", "current best heroes mlbb". #}
+<section class="meta-now-section">
+  <h2>🔥 Dominating Right Now &mdash; Top Win Rate</h2>
+  <p class="muted">These five heroes are statistically the strongest in the current MLBB meta. If you can play them, lock in.</p>
+  <ol class="meta-now-list">
+    {% for h in top_wr[:5] %}
+      <li>
+        <a href="{{ url_for('heroes.hero_page', slug=h.slug) }}">
+          <span class="rank-badge">#{{ loop.index }}</span>
+          <img src="{{ h.head }}" alt="{{ h.name }} — top MLBB win rate {{ CURRENT_MONTH }} {{ YEAR }}"
+               width="56" height="56"
+               {% if loop.index <= 3 %}fetchpriority="high"{% else %}loading="lazy"{% endif %}
+               decoding="async">
+          <span class="hero-info">
+            <span class="hero-name">{{ h.name }}</span>
+            {% if h.role %}<span class="hero-role">{{ h.role }}</span>{% endif %}
+          </span>
+          <span class="hero-stat-strong tier-{{ h.tier }}">{{ pct(h.win_rate, 1) }} WR</span>
+        </a>
+      </li>
+    {% endfor %}
+  </ol>
+</section>
+
+{# Section 2 — Most banned. Targets "mlbb most banned now", "who to ban mlbb". #}
+<section class="meta-now-section">
+  <h2>🚫 Most Banned This Week</h2>
+  <p class="muted">Ban rate is the clearest signal of a hero being feared in the current meta. These are the must-ban targets.</p>
+  <ol class="meta-now-list">
+    {% for h in top_ban[:5] %}
+      <li>
+        <a href="{{ url_for('heroes.hero_page', slug=h.slug) }}">
+          <span class="rank-badge">#{{ loop.index }}</span>
+          <img src="{{ h.head }}" alt="{{ h.name }} — most banned MLBB {{ CURRENT_MONTH }} {{ YEAR }}"
+               width="56" height="56" loading="lazy" decoding="async">
+          <span class="hero-info">
+            <span class="hero-name">{{ h.name }}</span>
+            {% if h.role %}<span class="hero-role">{{ h.role }}</span>{% endif %}
+          </span>
+          <span class="hero-stat-strong">{{ pct(h.ban_rate, 1) }} BR</span>
+        </a>
+      </li>
+    {% endfor %}
+  </ol>
+</section>
+
+{# Section 3 — Hidden OP. Targets "hidden op mlbb", "secret meta picks mlbb",
+   "underrated mlbb heroes". This is the section that drives shares because
+   "secret OP" listicles get screenshot-ed and re-posted in MLBB Discord. #}
+{% if hidden_op %}
+<section class="meta-now-section">
+  <h2>💎 Hidden OP &mdash; Win Rate Up, Pick Rate Low</h2>
+  <p class="muted">High win rate but barely picked. These heroes are quietly winning games while the ladder is still spamming the obvious picks.</p>
+  <ol class="meta-now-list">
+    {% for h in hidden_op[:5] %}
+      <li>
+        <a href="{{ url_for('heroes.hero_page', slug=h.slug) }}">
+          <span class="rank-badge">#{{ loop.index }}</span>
+          <img src="{{ h.head }}" alt="{{ h.name }} — hidden OP MLBB {{ CURRENT_MONTH }} {{ YEAR }}"
+               width="56" height="56" loading="lazy" decoding="async">
+          <span class="hero-info">
+            <span class="hero-name">{{ h.name }}</span>
+            {% if h.role %}<span class="hero-role">{{ h.role }}</span>{% endif %}
+          </span>
+          <span class="hero-stat-strong tier-{{ h.tier }}">
+            {{ pct(h.win_rate, 1) }} WR · {{ pct(h.pick_rate, 2) }} PR
+          </span>
+        </a>
+      </li>
+    {% endfor %}
+  </ol>
+</section>
+{% endif %}
+
+{# Section 4 — Struggling heroes. Targets "worst mlbb heroes", "heroes to
+   avoid mlbb", "mlbb nerf candidates". Sometimes searched by panicked
+   ranked players whose main just got nerfed. #}
+{% if struggling %}
+<section class="meta-now-section">
+  <h2>📉 Falling Off &mdash; Avoid These</h2>
+  <p class="muted">The bottom-WR heroes in the current patch. If your main is here, consider a backup pick or wait for the next balance update.</p>
+  <ol class="meta-now-list">
+    {% for h in struggling[:5] %}
+      <li>
+        <a href="{{ url_for('heroes.hero_page', slug=h.slug) }}">
+          <span class="rank-badge">#{{ loop.index }}</span>
+          <img src="{{ h.head }}" alt="{{ h.name }} — struggling MLBB {{ CURRENT_MONTH }} {{ YEAR }}"
+               width="56" height="56" loading="lazy" decoding="async">
+          <span class="hero-info">
+            <span class="hero-name">{{ h.name }}</span>
+            {% if h.role %}<span class="hero-role">{{ h.role }}</span>{% endif %}
+          </span>
+          <span class="hero-stat-weak">{{ pct(h.win_rate, 1) }} WR</span>
+        </a>
+      </li>
+    {% endfor %}
+  </ol>
+</section>
+{% endif %}
+
+{# Section 5 — Cross-link to the deeper resources. Internal linking + adds
+   keyword variety in anchor text ("tier list", "patch notes", "hero guides"). #}
+<section class="meta-now-section meta-now-related">
+  <h2>Dive Deeper</h2>
+  <div class="related-grid">
+    <a class="related-card" href="{{ url_for('heroes.tier_list_page') }}">
+      <span class="related-kicker">Full Tier List</span>
+      <span class="related-title">All {{ total_heroes }} MLBB heroes ranked</span>
+      <span class="related-desc">SS through D, cross-verified against 4 sources. Updated every 6 hours.</span>
+    </a>
+    <a class="related-card" href="{{ url_for('pages.patch_notes_page') }}">
+      <span class="related-kicker">Patch Report</span>
+      <span class="related-title">{{ CURRENT_MONTH }} Patch Meta Digest</span>
+      <span class="related-desc">Meta definers, pick priorities, ban list and hidden OP &mdash; auto-generated weekly.</span>
+    </a>
+    <a class="related-card" href="{{ url_for('pages.meta_page') }}">
+      <span class="related-kicker">Stats</span>
+      <span class="related-title">Top 10 by Win/Pick/Ban Rate</span>
+      <span class="related-desc">Three side-by-side ranked top-10 lists for the current patch.</span>
+    </a>
+    <a class="related-card" href="{{ url_for('heroes.index') }}">
+      <span class="related-kicker">All Heroes</span>
+      <span class="related-title">Per-hero builds & guides</span>
+      <span class="related-desc">{{ total_heroes }} live hero guides with builds, counters, combos and pro tips.</span>
+    </a>
+  </div>
+</section>
+{% endblock %}

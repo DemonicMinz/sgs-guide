@@ -71,6 +71,7 @@ def sitemap_core() -> Response:
         ("/tier-list?rank=legend", "0.7", "daily"),
         ("/tier-list?rank=epic",   "0.7", "daily"),
         ("/meta", "0.9", "daily"),
+        ("/meta-now", "0.9", "daily"),
         ("/patch-notes", "0.9", "daily"),
         ("/about", "0.5", "monthly"),
     ]

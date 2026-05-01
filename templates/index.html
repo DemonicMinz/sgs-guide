@@ -136,9 +136,11 @@
     {% endfor %}
   </div>
   <p class="trending-footnote muted">
-    Want the full breakdown? Jump to the
+    Want the full breakdown? See the
+    <a href="{{ url_for('pages.meta_now_page') }}">MLBB meta right now</a>
+    for live top-5 win-rate, hidden-OP picks and a full ban list, or the
     <a href="{{ url_for('pages.patch_notes_page') }}">patch-notes meta report</a>
-    for pick priorities, hidden-OP picks and struggling heroes this patch.
+    for the deeper digest.
   </p>
 </section>
 {% endif %}

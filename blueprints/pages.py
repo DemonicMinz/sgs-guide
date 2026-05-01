@@ -184,6 +184,100 @@ def meta_page() -> str:
 
 
 # --------------------------------------------------------------------------- #
+# Meta Now — keyword-targeted "current meta" landing page
+# --------------------------------------------------------------------------- #
+# Specifically built to rank for time-sensitive head-term-adjacent queries
+# that the existing /meta and /patch-notes pages don't naturally target:
+#   "mlbb meta now" / "mlbb meta this week" / "current mlbb meta" /
+#   "mlbb best heroes right now" / "mlbb may 2026 meta"
+# Uses the same data layer as /patch-notes but with present-tense framing
+# and a dateModified that updates every render — Google ranks "now" queries
+# heavily on freshness signal, not just content quality.
+@bp.route("/meta-now")
+def meta_now_page() -> str:
+    from app import SITE_NAME  # lazy
+
+    tier_data = get_tier_list("all")
+    catalog = {h["id"]: h for h in get_all_heroes()}
+
+    def enrich(h: dict) -> dict:
+        meta = catalog.get(h["id"]) or {}
+        out = dict(h)
+        out["slug"] = meta.get("slug") or slugify(h.get("name", ""))
+        out["head"] = h.get("head") or meta.get("head")
+        out["role"] = meta.get("role")
+        return out
+
+    enriched = [enrich(h) for h in tier_data if h.get("name")]
+
+    top_wr = sorted(
+        [h for h in enriched if h.get("win_rate") is not None],
+        key=lambda h: h.get("win_rate") or 0,
+        reverse=True,
+    )
+    top_ban = sorted(
+        [h for h in enriched if h.get("ban_rate") is not None],
+        key=lambda h: h.get("ban_rate") or 0,
+        reverse=True,
+    )
+    # Hidden OP: high WR + low pick rate (<= 1.5%). Same heuristic as
+    # patch_notes' "Under the Radar" but with a slightly looser cutoff so
+    # we always have something to show even in homogenous metas.
+    hidden_op = sorted(
+        [
+            h for h in enriched
+            if (h.get("win_rate") or 0) >= 0.51
+            and (h.get("pick_rate") or 1) <= 0.015
+        ],
+        key=lambda h: h.get("win_rate") or 0,
+        reverse=True,
+    )
+    struggling = sorted(
+        [h for h in enriched if h.get("win_rate") is not None],
+        key=lambda h: h.get("win_rate") or 0,
+    )
+
+    cache_key = make_cache_key(
+        "/api/heroes/rank",
+        {"rank": "all", "days": 7, "sort_field": "win_rate", "size": 200},
+    )
+    updated = cache_age_text(cache_key)
+    # Full ISO timestamp for schema.org dateModified — recency signal Google
+    # uses for "now" queries.
+    updated_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    current_month = datetime.now(timezone.utc).strftime("%B %Y")
+
+    top_name = top_wr[0]["name"] if top_wr else "the meta"
+    return render_template(
+        "meta_now.html",
+        top_wr=top_wr,
+        top_ban=top_ban,
+        hidden_op=hidden_op,
+        struggling=struggling,
+        total_heroes=len(enriched),
+        updated=updated,
+        updated_iso=updated_iso,
+        page_title=(
+            f"MLBB Meta Right Now — {current_month} Live Tier List, "
+            f"Top Heroes & Bans | {SITE_NAME}"
+        ),
+        page_desc=(
+            f"What's the meta in MLBB right now? Live tier list updated "
+            f"every 6 hours from real ranked matches. {top_name} is leading "
+            f"the {current_month} meta — see the full top-5 win rate, most "
+            f"banned and hidden-OP picks. Updated {updated}."
+        ),
+        page_keywords=(
+            f"mlbb meta now, mlbb meta {current_month.lower()}, current mlbb "
+            "meta, mlbb meta this week, mlbb best heroes right now, mobile "
+            "legends meta now, mlbb top heroes today, mlbb most banned now, "
+            "hidden op mlbb"
+        ),
+        canonical="/meta-now",
+    )
+
+
+# --------------------------------------------------------------------------- #
 # About
 # --------------------------------------------------------------------------- #
 @bp.route("/about")

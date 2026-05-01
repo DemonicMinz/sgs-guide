@@ -2270,3 +2270,147 @@ h3 { font-size: 1.1rem; }
   html { scroll-behavior: auto; }
 }
 
+
+/* ---------- /meta-now landing page ---------- */
+/* Built specifically to rank for "mlbb meta now" / "current mlbb meta"
+   queries. Heavy emphasis on freshness signals (kicker timestamp, large
+   numbers, "right now" framing). */
+.meta-now-head {
+  text-align: center;
+  padding: 28px 16px 12px;
+}
+.meta-now-kicker {
+  display: inline-block;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--accent, #ffc850);
+  background: rgba(255, 200, 80, 0.08);
+  border: 1px solid rgba(255, 200, 80, 0.3);
+  border-radius: 999px;
+  padding: 4px 14px;
+  margin: 0 0 12px;
+}
+.meta-now-head h1 {
+  margin: 0 0 12px;
+  font-size: clamp(1.6rem, 4.5vw, 2.4rem);
+}
+.meta-now-head .lede {
+  max-width: 720px;
+  margin: 0 auto 16px;
+  color: var(--text-dim);
+  font-size: 1.02rem;
+}
+.meta-now-stats {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  font-size: .92rem;
+  color: var(--text-dim);
+}
+.meta-now-stat strong {
+  color: #fff;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.15rem;
+}
+.meta-now-stat-sep { opacity: .4; }
+
+.meta-now-section {
+  margin: 32px 0;
+}
+.meta-now-section h2 {
+  margin: 0 0 6px;
+  font-size: 1.4rem;
+}
+.meta-now-section .muted {
+  color: var(--text-dim);
+  margin: 0 0 16px;
+  font-size: .95rem;
+}
+
+.meta-now-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+.meta-now-list a {
+  display: grid;
+  grid-template-columns: auto 56px 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color .18s ease, transform .18s ease;
+}
+.meta-now-list a:hover,
+.meta-now-list a:focus-visible {
+  border-color: var(--accent, #ffc850);
+  transform: translateX(2px);
+}
+.meta-now-list .rank-badge {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 1.3rem;
+  color: var(--text-dim);
+  min-width: 32px;
+  text-align: center;
+}
+.meta-now-list img {
+  border-radius: 50%;
+  background: var(--bg-2);
+}
+.meta-now-list .hero-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.meta-now-list .hero-name {
+  font-weight: 600;
+  color: #fff;
+}
+.meta-now-list .hero-role {
+  font-size: .75rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.meta-now-list .hero-stat-strong {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #fff;
+  text-align: right;
+  white-space: nowrap;
+}
+.meta-now-list .hero-stat-weak {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #aa6b6b;
+  text-align: right;
+}
+@media (max-width: 540px) {
+  .meta-now-list a {
+    grid-template-columns: auto 44px 1fr auto;
+    gap: 10px;
+    padding: 8px 10px;
+  }
+  .meta-now-list img { width: 44px; height: 44px; }
+  .meta-now-list .rank-badge { font-size: 1.1rem; min-width: 24px; }
+  .meta-now-list .hero-stat-strong,
+  .meta-now-list .hero-stat-weak { font-size: .9rem; }
+}
+
+.meta-now-related .related-grid {
+  margin-top: 12px;
+}
