@@ -486,6 +486,55 @@ h3 { font-size: 1.1rem; }
   border: 0;
 }
 
+/* Related-heroes grid — hero-to-hero internal linking on hero pages.
+   Distinct from .related-grid (category cards) since each card is just
+   icon + name + tier badge, not kicker/title/desc. */
+.related-heroes-sub {
+  color: var(--text-dim);
+  margin: 0 0 12px;
+  font-size: .95rem;
+}
+.hero-link-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+.hero-link-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 8px;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color .18s ease, transform .18s ease;
+}
+.hero-link-card:hover,
+.hero-link-card:focus-visible {
+  border-color: var(--accent, #ffc850);
+  transform: translateY(-2px);
+}
+.hero-link-card img {
+  border-radius: 50%;
+  background: var(--bg-2);
+}
+.hero-link-name {
+  font-size: .88rem;
+  font-weight: 600;
+  text-align: center;
+}
+.hero-link-tier {
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .5px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: rgba(255,255,255,.08);
+}
+
 /* ---------- Panels ---------- */
 .panel {
   margin: 24px 0;

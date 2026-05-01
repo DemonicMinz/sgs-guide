@@ -181,6 +181,23 @@ def make_cache_key(path: str, params: dict[str, Any] | None = None) -> str:
     return path + "?" + "&".join(f"{k}={v}" for k, v in sorted(params.items()))
 
 
+def cache_modified_iso(cache_key: str) -> str | None:
+    """ISO timestamp (UTC) of when a cache file was last written, or None.
+
+    Used by sitemap-heroes.xml to emit per-hero <lastmod> values, so Google
+    only re-crawls heroes whose stats actually changed instead of re-fetching
+    every page on every sitemap visit.
+    """
+    try:
+        path = _cache_path(cache_key)
+        if not path.exists():
+            return None
+        ts = path.stat().st_mtime
+        return datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def api_get(path: str, params: dict[str, Any] | None = None) -> Any:
     """Cached GET against the OpenMLBB API with graceful fallback."""
     key = make_cache_key(path, params)
@@ -1863,6 +1880,29 @@ def hero_page(slug: str) -> str:
         lanes=detail.get("lanes") or [],
     )
 
+    # Related heroes — 6 same-role heroes for hero-to-hero internal linking.
+    # Uses a slug-sorted rotation (not a top-N by WR) so every hero in the
+    # role gets an equal share of inbound links from sibling pages, instead
+    # of concentrating all crawl signal on the top-WR heroes. This is how
+    # we move the long-tail hero pages out of "Discovered – currently not
+    # indexed" in Search Console.
+    same_role = sorted(
+        (h for h in heroes if (h.get("role") or "").lower() == role.lower()),
+        key=lambda h: h.get("slug") or "",
+    )
+    related_heroes: list[dict] = []
+    if len(same_role) > 1:
+        slugs = [h.get("slug") for h in same_role]
+        try:
+            self_idx = slugs.index(slug)
+        except ValueError:
+            self_idx = 0
+        n = len(same_role)
+        related_heroes = [
+            same_role[(self_idx + 1 + i) % n]
+            for i in range(min(6, n - 1))
+        ]
+
     return render_template(
         "hero.html",
         hero=hero,
@@ -1885,6 +1925,7 @@ def hero_page(slug: str) -> str:
         br_pct=br_pct,
         updated=updated,
         faqs=faqs,
+        related_heroes=related_heroes,
         page_title=page_title,
         page_desc=page_desc,
         page_keywords=page_keywords,
@@ -2353,15 +2394,27 @@ def sitemap_core() -> Response:
 
 @app.route("/sitemap-heroes.xml")
 def sitemap_heroes() -> Response:
-    """One entry per hero guide page."""
+    """One entry per hero guide page.
+
+    Emits a per-hero <lastmod> derived from when that hero's stats cache
+    was last refreshed. Lets Google prioritise re-crawling only the heroes
+    whose data actually changed since its last visit, instead of treating
+    all 132 pages as having moved on every sitemap fetch.
+    """
     base = dynamic_site_url()
     heroes = get_all_heroes()
-    lastmod = datetime.now(timezone.utc).date().isoformat()
+    fallback_lastmod = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     parts = ['<?xml version="1.0" encoding="UTF-8"?>',
              '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
     for h in heroes:
+        stats_key = make_cache_key(
+            f"/api/heroes/{h['id']}/stats",
+            {"rank": "all"},
+        )
+        hero_lastmod = cache_modified_iso(stats_key) or fallback_lastmod
         parts.append(
-            f"<url><loc>{base}/hero/{h['slug']}</loc><lastmod>{lastmod}</lastmod>"
+            f"<url><loc>{base}/hero/{h['slug']}</loc>"
+            f"<lastmod>{hero_lastmod}</lastmod>"
             f"<changefreq>daily</changefreq><priority>0.8</priority></url>"
         )
     parts.append("</urlset>")

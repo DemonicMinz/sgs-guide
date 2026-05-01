@@ -741,6 +741,28 @@
 
 </div><!-- /.tab-panels -->
 
+{# Related heroes — direct hero-to-hero internal links. Distributes crawl
+   budget across the long tail of hero pages so Google moves them out of
+   "Discovered – currently not indexed" in Search Console. The route picks
+   6 same-role heroes via slug-sorted rotation so every hero gets equal
+   inbound link-share, not just the top-WR picks. #}
+{% if related_heroes %}
+<section class="panel related-heroes" aria-labelledby="related-heroes-heading">
+  <h2 id="related-heroes-heading">Other {{ role }}s to Try</h2>
+  <p class="related-heroes-sub">Compare {{ detail.name }} with other {{ role|lower }} heroes in the current meta.</p>
+  <div class="hero-link-grid">
+    {% for rh in related_heroes %}
+    <a href="{{ url_for('hero_page', slug=rh.slug) }}" class="hero-link-card">
+      <img src="{{ rh.head }}" alt="{{ rh.name }} icon"
+           width="48" height="48" loading="lazy" decoding="async">
+      <span class="hero-link-name">{{ rh.name }}</span>
+      {% if rh.tier %}<span class="hero-link-tier tier-{{ rh.tier|lower }}">{{ rh.tier }}</span>{% endif %}
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
 <!-- Related pages / topical cluster — internal linking is the second-strongest
      SEO lever after content depth. Every hero page ends by pointing Google
      at its siblings (same role, same lane, the current meta overall). -->
