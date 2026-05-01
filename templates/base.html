@@ -107,7 +107,7 @@ function gtag_report_conversion(url) {
 <!-- Prefetch likely next navigation for repeat visitors (tier list is #2 page). -->
 {% if request.endpoint == 'heroes.index' %}
 <link rel="prefetch" href="{{ url_for('heroes.tier_list_page') }}" as="document">
-<link rel="prefetch" href="{{ url_for('meta_page') }}" as="document">
+<link rel="prefetch" href="{{ url_for('pages.meta_page') }}" as="document">
 {% endif %}
 
 {% block extra_head %}{% endblock %}
@@ -219,12 +219,12 @@ function gtag_report_conversion(url) {
     <nav class="site-nav" aria-label="Primary">
       <a href="{{ url_for('heroes.index') }}"{% if request.endpoint == 'heroes.index' %} aria-current="page"{% endif %}>Heroes</a>
       <a href="{{ url_for('heroes.tier_list_page') }}"{% if request.endpoint == 'heroes.tier_list_page' %} aria-current="page"{% endif %}>Tier List/Meta</a>
-      <a href="{{ url_for('meta_page') }}"{% if request.endpoint == 'meta_page' %} aria-current="page"{% endif %}>Stats</a>
-      <a href="{{ url_for('patch_notes_page') }}"{% if request.endpoint == 'patch_notes_page' %} aria-current="page"{% endif %}>Patch Notes</a>
+      <a href="{{ url_for('pages.meta_page') }}"{% if request.endpoint == 'pages.meta_page' %} aria-current="page"{% endif %}>Stats</a>
+      <a href="{{ url_for('pages.patch_notes_page') }}"{% if request.endpoint == 'pages.patch_notes_page' %} aria-current="page"{% endif %}>Patch Notes</a>
       {% if topup_enabled %}
       <a href="{{ url_for('topup') }}"{% if request.endpoint in ('topup', 'topup_mlbb') %} aria-current="page"{% endif %}>Top Up</a>
       {% endif %}
-      <a href="{{ url_for('about_page') }}"{% if request.endpoint == 'about_page' %} aria-current="page"{% endif %}>About</a>
+      <a href="{{ url_for('pages.about_page') }}"{% if request.endpoint == 'pages.about_page' %} aria-current="page"{% endif %}>About</a>
     </nav>
     <a class="header-cta" href="{{ TELEGRAM_URL }}" target="_blank" rel="noopener" data-cta="header" onclick="return gtag_report_conversion('{{ TELEGRAM_URL }}');">
       <svg class="cta-icon" aria-hidden="true"><use href="#icon-tg"/></svg>
@@ -288,12 +288,12 @@ function gtag_report_conversion(url) {
     <p class="foot-links">
       <a href="{{ url_for('heroes.index') }}">Heroes</a> ·
       <a href="{{ url_for('heroes.tier_list_page') }}">Tier List/Meta</a> ·
-      <a href="{{ url_for('meta_page') }}">Stats</a> ·
-      <a href="{{ url_for('patch_notes_page') }}">Patch Notes</a> ·
+      <a href="{{ url_for('pages.meta_page') }}">Stats</a> ·
+      <a href="{{ url_for('pages.patch_notes_page') }}">Patch Notes</a> ·
       {% if topup_enabled %}
       <a href="{{ url_for('topup') }}">Top Up</a> ·
       {% endif %}
-      <a href="{{ url_for('about_page') }}">About</a> ·
+      <a href="{{ url_for('pages.about_page') }}">About</a> ·
       <a href="{{ TELEGRAM_URL }}" target="_blank" rel="noopener" onclick="return gtag_report_conversion('{{ TELEGRAM_URL }}');">Telegram</a>
     </p>
     <p class="foot-note">Hero stats provided by the OpenMLBB community API, cached every 6 hours.
