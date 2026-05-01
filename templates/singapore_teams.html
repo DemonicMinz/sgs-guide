@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block schema %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "@id": "{{ SITE_URL }}{{ canonical }}#article",
+  "isPartOf": { "@id": "{{ SITE_URL }}/#website" },
+  "publisher": { "@id": "{{ SITE_URL }}/#organization" },
+  "author": { "@id": "{{ SITE_URL }}/#organization" },
+  "headline": "MLBB Teams Singapore — Find Mobile Legends Teammates",
+  "description": {{ page_desc | tojson }},
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "{{ SITE_URL }}{{ canonical }}" },
+  "datePublished": "{{ TODAY_ISO }}",
+  "dateModified": "{{ TODAY_ISO }}",
+  "inLanguage": "{{ LANG_TAG }}",
+  "audience": {
+    "@type": "Audience",
+    "audienceType": "Mobile Legends: Bang Bang players in Singapore",
+    "geographicArea": { "@type": "Country", "name": "Singapore" }
+  },
+  "about": {
+    "@type": "VideoGame",
+    "name": "Mobile Legends: Bang Bang"
+  }
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "{{ SITE_URL }}/" },
+    { "@type": "ListItem", "position": 2, "name": "Singapore MLBB Teams", "item": "{{ SITE_URL }}{{ canonical }}" }
+  ]
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "inLanguage": "{{ LANG_TAG }}",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Where do I find MLBB teammates in Singapore?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Singapore Gaming Syndicate (SGS) is the largest verified Mobile Legends community in Singapore. Players post their rank, role and availability in the Telegram channel; team formation happens in real time. Most users find a stable 5-man within a week of joining."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Are there MLBB tournaments in Singapore?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, regularly. Local MLBB tournaments run through the SEA esports circuit and various community-organised events. Most Singaporean tournament teams form inside SGS — the channel is the natural place to find tryouts and recruit teammates."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What roles are MLBB teams in Singapore looking for?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "All five — but support and tank are typically in shortest supply because most ladder players default to gold-lane marksman or jungle. If you can play tank, support or roam at Mythic+, you'll get tryout offers within days of joining SGS."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Do MLBB teams in Singapore require tryouts?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Competitive tournament teams do, yes. Most run a 1-2 week tryout — scrims with the existing roster, communication test, hero pool review. Casual scrim groups are looser; usually just rank verification and a single test scrim."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I find MLBB duo partners in Singapore?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes — duo finding is one of the most common SGS use cases. Post your rank, role, language preference and active hours in the Telegram channel; you'll usually have multiple matches the same day. Filtering by Singapore time zone alone fixes most ladder matchmaking pain."
+      }
+    }
+  ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="page-head sg-head">
+  <p class="sg-kicker">🇸🇬 Singapore Mobile Legends Community</p>
+  <h1>MLBB Teams Singapore — Find Mobile Legends Teammates</h1>
+  <p class="lede">
+    Looking for an <strong>MLBB team in Singapore</strong>, a five-stack
+    for Mythic, or just a duo partner who isn't tilted at 1 AM?
+    Singapore Gaming Syndicate is where Singaporean Mobile Legends
+    players actually find each other.
+  </p>
+  <a class="cta-button" href="{{ telegram_url }}" target="_blank" rel="noopener" data-cta="sg-teams-hero" onclick="return gtag_report_conversion('{{ telegram_url }}');">
+    Join SGS Telegram &rarr;
+  </a>
+</section>
+
+<section class="sg-section">
+  <h2>Why Teaming Up in Singapore Is Hard (And Why SGS Fixes It)</h2>
+  <p>
+    Random matchmaking in MLBB is a coin flip. Half your games are decided in
+    pick/ban. The other half are decided by whether your gold-lane marksman is
+    tilted from his last loss. If you want to <em>actually climb</em>, you need
+    teammates who:
+  </p>
+  <ul>
+    <li>Speak your language and are awake at your hours</li>
+    <li>Play their assigned role instead of insta-locking jungle</li>
+    <li>Don't AFK at -3 KDA</li>
+    <li>Will review losses with you instead of blaming the matchmaker</li>
+  </ul>
+  <p>
+    SGS exists because random matchmaking can't give you any of that. The
+    Telegram channel is filtered for verified Singaporean players, sorted by
+    rank, with role-fill posts going up daily.
+  </p>
+</section>
+
+<section class="sg-section">
+  <h2>What You'll Find Inside SGS</h2>
+  <div class="sg-grid">
+    <article class="sg-card">
+      <h3>🎯 Tournament Teams</h3>
+      <p>Active tournament squads recruiting role-fills. Scrim tryouts run weekly. Tier: Mythic Honor and above.</p>
+    </article>
+    <article class="sg-card">
+      <h3>🤝 Casual 5-Stacks</h3>
+      <p>Stable scrim groups for evening ranked. Most users find a regular 5-man within a week.</p>
+    </article>
+    <article class="sg-card">
+      <h3>👯 Duo Partners</h3>
+      <p>Filter by rank + role + active hours. Replaces ladder soloq with a known partner who actually plays your role.</p>
+    </article>
+    <article class="sg-card">
+      <h3>📊 Coaches & VOD Review</h3>
+      <p>Higher-rank players who'll watch your replays. Common in the Mythic and Mythic Honor channels.</p>
+    </article>
+  </div>
+</section>
+
+<section class="sg-section">
+  <h2>Common Roles in Demand</h2>
+  <p>
+    These are the roles SGS sees the most "team looking for X" posts for:
+  </p>
+  <ul class="sg-tier-list">
+    <li><strong>Roam / Tank</strong> — perpetual shortage. Tigreal/Mathilda/Edith mains get tryouts within hours.</li>
+    <li><strong>Support</strong> — high demand, especially for utility supports (Floryn, Estes, Mathilda).</li>
+    <li><strong>EXP Lane</strong> — moderate demand. Versatile pools (tank+fighter dual-role) are most wanted.</li>
+    <li><strong>Mid Lane</strong> — competitive but doable; mages with deep pool (3+ proven heroes) stand out.</li>
+    <li><strong>Jungle</strong> — most contested role. Tournament-level junglers sometimes wait weeks for the right team fit.</li>
+    <li><strong>Gold Lane / Marksman</strong> — high supply. Stand out by mastering 4+ marksmen across the meta.</li>
+  </ul>
+</section>
+
+<section class="sg-section">
+  <h2>How to Get Picked Up Faster</h2>
+  <ol class="sg-steps">
+    <li>
+      <strong>Be honest about your rank.</strong> Smurfs get filtered out fast.
+      Post your real current rank and best peak.
+    </li>
+    <li>
+      <strong>Show your hero pool.</strong> Three-deep on a single role beats
+      eleven heroes spread across all five.
+    </li>
+    <li>
+      <strong>State your hours.</strong> "Mythic, support, on after 9 PM SGT" gets
+      replies. "Looking for team" doesn't.
+    </li>
+    <li>
+      <strong>Scrim before joining a team.</strong> Use SGS scrim windows to test
+      chemistry before committing — both you and the team are evaluating fit.
+    </li>
+  </ol>
+  <p>
+    Want to get scrim-fit first? Read the
+    <a href="{{ url_for('pages.singapore_scrim_page') }}">SGS scrim guide</a>.
+  </p>
+</section>
+
+<section class="sg-section">
+  <h2>Prep Resources</h2>
+  <p>Use SGS's live data to be ready when teams ask "what's your hero pool?":</p>
+  <div class="related-grid">
+    <a class="related-card" href="{{ url_for('heroes.tier_list_page') }}">
+      <span class="related-kicker">Tier List</span>
+      <span class="related-title">Current MLBB Tier List</span>
+      <span class="related-desc">Know which heroes are meta before tryouts. SS through D, cross-verified, live.</span>
+    </a>
+    <a class="related-card" href="{{ url_for('pages.meta_now_page') }}">
+      <span class="related-kicker">Meta</span>
+      <span class="related-title">MLBB Meta Right Now</span>
+      <span class="related-desc">What's actually winning ranked games this week. Updated every 6 hours.</span>
+    </a>
+    <a class="related-card" href="{{ url_for('heroes.index') }}">
+      <span class="related-kicker">Hero Guides</span>
+      <span class="related-title">All 132 hero builds</span>
+      <span class="related-desc">Per-hero builds, counters and combos to fill out your hero pool.</span>
+    </a>
+  </div>
+</section>
+
+<section class="sg-cta-band">
+  <h2>Find Your Team Tonight</h2>
+  <p>Singapore Gaming Syndicate is verified-only, free to join, and where Singaporean Mobile Legends teams actually form.</p>
+  <a class="cta-button" href="{{ telegram_url }}" target="_blank" rel="noopener" data-cta="sg-teams-foot" onclick="return gtag_report_conversion('{{ telegram_url }}');">
+    Join SGS Telegram &rarr;
+  </a>
+</section>
+{% endblock %}

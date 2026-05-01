@@ -73,6 +73,8 @@ def sitemap_core() -> Response:
         ("/meta", "0.9", "daily"),
         ("/meta-now", "0.9", "daily"),
         ("/patch-notes", "0.9", "daily"),
+        ("/singapore-mlbb-scrim", "0.7", "weekly"),
+        ("/singapore-mlbb-teams", "0.7", "weekly"),
         ("/about", "0.5", "monthly"),
     ]
     if config.TOPUP_ENABLED:

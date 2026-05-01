@@ -292,3 +292,68 @@ def about_page() -> str:
         canonical="/about",
         hide_cta_band=True,
     )
+
+
+# --------------------------------------------------------------------------- #
+# Singapore-niche landing pages — geo + topic moat
+# --------------------------------------------------------------------------- #
+# These exist to dominate searches that combine "mlbb"/"mobile legends"
+# with "singapore"/"sg" + a specific intent (scrim, team, community).
+# Volume is low compared to global head terms but competition is near-zero
+# because no global MLBB site bothers writing for Singapore players. This
+# is your easiest #1 ranking opportunity — the geo+niche combination is
+# our actual moat.
+@bp.route("/singapore-mlbb-scrim")
+def singapore_scrim_page() -> str:
+    from app import SITE_NAME, TELEGRAM_URL  # lazy
+
+    return render_template(
+        "singapore_scrim.html",
+        page_title=(
+            f"MLBB Scrim Singapore — Practice Mobile Legends with Real "
+            f"Players | {SITE_NAME}"
+        ),
+        page_desc=(
+            "Looking for MLBB scrims in Singapore? Singapore Gaming "
+            "Syndicate (SGS) runs daily Mobile Legends scrims from Epic "
+            "to Mythic Glory — verified players, no smurfs, no toxics. "
+            "Free to join. Telegram-coordinated."
+        ),
+        page_keywords=(
+            "mlbb scrim singapore, mobile legends scrim singapore, "
+            "mlbb practice singapore, mlbb scrim sg, singapore mlbb scrim, "
+            "mobile legends practice singapore, mlbb mythic scrim, "
+            "mlbb glory scrim singapore"
+        ),
+        telegram_url=TELEGRAM_URL,
+        canonical="/singapore-mlbb-scrim",
+        hide_cta_band=True,
+    )
+
+
+@bp.route("/singapore-mlbb-teams")
+def singapore_teams_page() -> str:
+    from app import SITE_NAME, TELEGRAM_URL  # lazy
+
+    return render_template(
+        "singapore_teams.html",
+        page_title=(
+            f"MLBB Teams Singapore — Find Mobile Legends Teammates | "
+            f"{SITE_NAME}"
+        ),
+        page_desc=(
+            "Find MLBB teammates in Singapore. SGS connects ranked Mobile "
+            "Legends players from Epic to Mythic Glory — role-fill, team "
+            "tryouts, scrim partners. Verified Singaporean community, "
+            "Telegram-coordinated. Free to join."
+        ),
+        page_keywords=(
+            "mlbb teams singapore, mobile legends teams singapore, "
+            "mlbb singapore team, find mlbb teammates singapore, "
+            "join mlbb team singapore, mlbb tryouts singapore, "
+            "mobile legends teammates sg, mlbb singapore community"
+        ),
+        telegram_url=TELEGRAM_URL,
+        canonical="/singapore-mlbb-teams",
+        hide_cta_band=True,
+    )

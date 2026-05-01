@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block schema %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "@id": "{{ SITE_URL }}{{ canonical }}#article",
+  "isPartOf": { "@id": "{{ SITE_URL }}/#website" },
+  "publisher": { "@id": "{{ SITE_URL }}/#organization" },
+  "author": { "@id": "{{ SITE_URL }}/#organization" },
+  "headline": "MLBB Scrim Singapore — Practice Mobile Legends with SGS",
+  "description": {{ page_desc | tojson }},
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "{{ SITE_URL }}{{ canonical }}" },
+  "datePublished": "{{ TODAY_ISO }}",
+  "dateModified": "{{ TODAY_ISO }}",
+  "inLanguage": "{{ LANG_TAG }}",
+  "audience": {
+    "@type": "Audience",
+    "audienceType": "Mobile Legends: Bang Bang players in Singapore",
+    "geographicArea": { "@type": "Country", "name": "Singapore" }
+  },
+  "about": {
+    "@type": "VideoGame",
+    "name": "Mobile Legends: Bang Bang"
+  }
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "{{ SITE_URL }}/" },
+    { "@type": "ListItem", "position": 2, "name": "Singapore MLBB Scrim", "item": "{{ SITE_URL }}{{ canonical }}" }
+  ]
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "inLanguage": "{{ LANG_TAG }}",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How do I join MLBB scrims in Singapore?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Join the Singapore Gaming Syndicate (SGS) Telegram channel. SGS coordinates daily Mobile Legends scrims among verified Singaporean players. Just click the Join Telegram button anywhere on this site, introduce yourself, post your in-game ID and current rank, and you'll be matched into a scrim that fits your level."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What ranks does SGS scrim with?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "All ranks from Epic upward. Most active scrims happen at Legend, Mythic, Mythic Honor and Mythic Glory tiers, but Epic-rank scrims run regularly too. Players are matched by rank to keep games competitive."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Do I have to pay to scrim with SGS?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. Joining SGS scrims is free. SGS is a community, not a paid service — we run scrims because we want to play with real players, not random ladder matches."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Are SGS scrims smurf-free?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. All players are verified before being added to scrim pools — no smurfs, no boosted accounts, no toxic players. If anyone breaks the rules, they're removed. This is the entire point of SGS over public matchmaking: real games against real players at your real rank."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How often does SGS run MLBB scrims?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Daily. Most scrims happen in the evenings (Singapore time) when the active player base is online. Larger 5-man scrim blocks are scheduled on weekends. The Telegram channel announces scrim windows as they open."
+      }
+    }
+  ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="page-head sg-head">
+  <p class="sg-kicker">🇸🇬 Singapore Mobile Legends Community</p>
+  <h1>MLBB Scrim Singapore — Practice with Real Players</h1>
+  <p class="lede">
+    Looking for <strong>Mobile Legends scrims in Singapore</strong>?
+    Singapore Gaming Syndicate runs daily MLBB scrims from Epic to
+    Mythic Glory — verified Singaporean players, no smurfs, no toxic
+    behaviour, no pay-to-play. Free to join via Telegram.
+  </p>
+  <a class="cta-button" href="{{ telegram_url }}" target="_blank" rel="noopener" data-cta="sg-scrim-hero" onclick="return gtag_report_conversion('{{ telegram_url }}');">
+    Join SGS Telegram &rarr;
+  </a>
+</section>
+
+<section class="sg-section">
+  <h2>Why Scrim Instead of Ranked Solo Queue?</h2>
+  <p>
+    Solo queue MLBB ranked is the worst environment to actually <em>improve</em>
+    in. You get throwers, AFKers, ML pickers ignoring counters, and supports who
+    refuse to ward. Two hours of soloq teaches you almost nothing because the
+    variables are completely random.
+  </p>
+  <p>
+    SGS scrims fix that. You play with the same five-stack repeatedly, against
+    other Singaporean stacks at your tier. Communication is on Discord/Telegram
+    voice. Drafts are real. Wins and losses come down to <em>actual play</em>,
+    not your random duo's emotional state. This is how every Mythic Glory player
+    in Singapore actually got there.
+  </p>
+</section>
+
+<section class="sg-section">
+  <h2>How SGS Scrims Work</h2>
+  <ol class="sg-steps">
+    <li>
+      <strong>Join the Telegram.</strong> Click the Join Telegram button anywhere
+      on this site. The channel is public; entry is free.
+    </li>
+    <li>
+      <strong>Verify your account.</strong> Post your in-game ID, current rank
+      and primary role. SGS verifies you're a real Singaporean player at the rank
+      you claim — this is the smurf filter.
+    </li>
+    <li>
+      <strong>Wait for a scrim window.</strong> Scrim openings are announced in
+      the channel. Tag in if your rank fits. Most scrims fill in 5–10 minutes.
+    </li>
+    <li>
+      <strong>Play, review, repeat.</strong> Each scrim is best-of-1 or best-of-3.
+      After the game, players review the draft and key fights. This is the
+      improvement loop solo queue never gives you.
+    </li>
+  </ol>
+</section>
+
+<section class="sg-section">
+  <h2>Who Plays in SGS Scrims?</h2>
+  <ul class="sg-tier-list">
+    <li><strong>Mythic Glory</strong> — daily, evenings. Aspiring tournament players.</li>
+    <li><strong>Mythic Honor</strong> — daily. The grind tier; most active.</li>
+    <li><strong>Mythic</strong> — multiple times daily.</li>
+    <li><strong>Legend / Epic</strong> — regular weekend slots. Good for players climbing for the first time.</li>
+  </ul>
+  <p>
+    Players come from across Singapore — students, working pros, ex-tournament
+    players. Most stay in SGS for years because the alternative is ladder hell.
+  </p>
+</section>
+
+<section class="sg-section">
+  <h2>Rules — What SGS Does NOT Tolerate</h2>
+  <ul class="sg-rules">
+    <li>❌ Smurfing or boosting accounts</li>
+    <li>❌ Toxic behaviour, flaming, racism, slurs</li>
+    <li>❌ AFK or intentional throwing</li>
+    <li>❌ Account-sharing across rank tiers</li>
+    <li>❌ Begging for boosts or carries</li>
+  </ul>
+  <p>
+    Break a rule, get removed. The scrim quality is the whole reason SGS exists,
+    so we enforce hard.
+  </p>
+</section>
+
+<section class="sg-section">
+  <h2>Want to Prep for Scrims?</h2>
+  <p>Use SGS's live data to come prepared:</p>
+  <div class="related-grid">
+    <a class="related-card" href="{{ url_for('heroes.tier_list_page') }}">
+      <span class="related-kicker">Tier List</span>
+      <span class="related-title">Live MLBB Tier List</span>
+      <span class="related-desc">SS through D, cross-verified across 4 sources, refreshed every 6 hours.</span>
+    </a>
+    <a class="related-card" href="{{ url_for('pages.meta_now_page') }}">
+      <span class="related-kicker">Meta</span>
+      <span class="related-title">MLBB Meta Right Now</span>
+      <span class="related-desc">Top heroes, biggest bans, hidden-OP picks for the current week.</span>
+    </a>
+    <a class="related-card" href="{{ url_for('pages.singapore_teams_page') }}">
+      <span class="related-kicker">Teams</span>
+      <span class="related-title">Find MLBB Teammates in SG</span>
+      <span class="related-desc">Looking for a team or duo partner? Here's how SGS connects players.</span>
+    </a>
+  </div>
+</section>
+
+<section class="sg-cta-band">
+  <h2>Ready to Scrim?</h2>
+  <p>SGS is free, smurf-free, and Singapore-only. Join the Telegram and you'll be in your first scrim by tonight.</p>
+  <a class="cta-button" href="{{ telegram_url }}" target="_blank" rel="noopener" data-cta="sg-scrim-foot" onclick="return gtag_report_conversion('{{ telegram_url }}');">
+    Join SGS Telegram &rarr;
+  </a>
+</section>
+{% endblock %}

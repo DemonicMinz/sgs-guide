@@ -2627,3 +2627,81 @@ h3 { font-size: 1.1rem; }
   font-size: .98rem;
 }
 .counter-strategy-list li::marker { color: var(--accent, #ffc850); }
+
+/* ---------- Singapore landing pages ---------- */
+.sg-head { text-align: center; padding: 28px 16px 16px; }
+.sg-kicker {
+  display: inline-block;
+  font-size: .82rem;
+  letter-spacing: .04em;
+  color: var(--accent, #ffc850);
+  background: rgba(255, 200, 80, 0.08);
+  border: 1px solid rgba(255, 200, 80, 0.25);
+  border-radius: 999px;
+  padding: 4px 14px;
+  margin: 0 0 14px;
+}
+.sg-head h1 { margin: 0 0 12px; font-size: clamp(1.6rem, 4.8vw, 2.5rem); }
+.sg-head .lede { max-width: 720px; margin: 0 auto 18px; color: var(--text-dim); font-size: 1.05rem; }
+.cta-button {
+  display: inline-block;
+  padding: 12px 22px;
+  background: var(--accent, #ffc850);
+  color: #0a0a0f;
+  font-weight: 700;
+  text-decoration: none;
+  border-radius: 999px;
+  transition: transform .18s ease, filter .18s ease;
+}
+.cta-button:hover, .cta-button:focus-visible {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+
+.sg-section { margin: 32px 0; max-width: 800px; }
+.sg-section h2 { margin: 0 0 12px; font-size: 1.4rem; }
+.sg-section p, .sg-section ul, .sg-section ol { font-size: .98rem; }
+
+.sg-steps {
+  margin: 0;
+  padding-left: 24px;
+  display: grid;
+  gap: 8px;
+}
+.sg-steps li::marker { color: var(--accent, #ffc850); font-weight: 700; }
+
+.sg-tier-list, .sg-rules {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+  list-style: none;
+}
+.sg-rules li { padding-left: 4px; }
+
+.sg-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+.sg-card {
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+}
+.sg-card h3 { margin: 0 0 6px; font-size: 1.05rem; }
+.sg-card p { margin: 0; color: var(--text-dim); font-size: .92rem; }
+
+.sg-cta-band {
+  text-align: center;
+  margin: 40px auto 12px;
+  padding: 28px 16px;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  max-width: 800px;
+}
+.sg-cta-band h2 { margin: 0 0 8px; }
+.sg-cta-band p { margin: 0 0 16px; color: var(--text-dim); }
