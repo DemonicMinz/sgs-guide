@@ -25,7 +25,7 @@
    These are the most likely hops on a hero page, so pre-warming the browser
    cache shaves ~200ms off the next nav for engaged readers. #}
 {% for c in (counters or synergies or [])[:2] %}
-  {% if c.slug %}<link rel="prefetch" href="{{ url_for('hero_page', slug=c.slug) }}" as="document">{% endif %}
+  {% if c.slug %}<link rel="prefetch" href="{{ url_for('heroes.hero_page', slug=c.slug) }}" as="document">{% endif %}
 {% endfor %}
 {% endblock %}
 
@@ -136,7 +136,7 @@
 
 {% block content %}
 <nav class="breadcrumb" aria-label="Breadcrumb">
-  <a href="{{ url_for('index') }}">Heroes</a>
+  <a href="{{ url_for('heroes.index') }}">Heroes</a>
   <span class="sep">/</span>
   <span>{{ detail.name }}</span>
 </nav>
@@ -357,7 +357,7 @@
           {% for s in (synergies or works_with)[:3] %}
             <li>
               {% if s.head %}<img src="{{ s.head }}" alt="{{ s.name }}" width="40" height="40" loading="lazy" decoding="async">{% endif %}
-              {% if s.slug %}<a href="{{ url_for('hero_page', slug=s.slug) }}">{{ s.name }}</a>{% else %}<span>{{ s.name }}</span>{% endif %}
+              {% if s.slug %}<a href="{{ url_for('heroes.hero_page', slug=s.slug) }}">{{ s.name }}</a>{% else %}<span>{{ s.name }}</span>{% endif %}
             </li>
           {% endfor %}
         </ul>
@@ -370,7 +370,7 @@
           {% for s in (counters or weak_against)[:3] %}
             <li>
               {% if s.head %}<img src="{{ s.head }}" alt="{{ s.name }}" width="40" height="40" loading="lazy" decoding="async">{% endif %}
-              {% if s.slug %}<a href="{{ url_for('hero_page', slug=s.slug) }}">{{ s.name }}</a>{% else %}<span>{{ s.name }}</span>{% endif %}
+              {% if s.slug %}<a href="{{ url_for('heroes.hero_page', slug=s.slug) }}">{{ s.name }}</a>{% else %}<span>{{ s.name }}</span>{% endif %}
             </li>
           {% endfor %}
         </ul>
@@ -383,7 +383,7 @@
           {% for s in strong_against[:3] %}
             <li>
               {% if s.head %}<img src="{{ s.head }}" alt="{{ s.name }}" width="40" height="40" loading="lazy" decoding="async">{% endif %}
-              <a href="{{ url_for('hero_page', slug=s.slug) }}">{{ s.name }}</a>
+              <a href="{{ url_for('heroes.hero_page', slug=s.slug) }}">{{ s.name }}</a>
             </li>
           {% endfor %}
         </ul>
@@ -621,7 +621,7 @@
       {% for c in counters %}
         <li class="counter-row" data-strength="{{ c.strength }}" title="{{ c.strength_explain }}">
           {% if c.slug %}
-            <a href="{{ url_for('hero_page', slug=c.slug) }}">
+            <a href="{{ url_for('heroes.hero_page', slug=c.slug) }}">
               <img src="{{ c.head }}" alt="{{ c.name }}" width="48" height="48" loading="lazy" decoding="async">
               <span class="cname">{{ c.name }}</span>
             </a>
@@ -646,7 +646,7 @@
     <h3 class="sub-h3">Struggles Against</h3>
     <ul class="mini-hero-row">
       {% for w in weak_against %}
-        <li><a href="{{ url_for('hero_page', slug=w.slug) }}">
+        <li><a href="{{ url_for('heroes.hero_page', slug=w.slug) }}">
           <img src="{{ w.head }}" alt="{{ w.name }}" width="56" height="56" loading="lazy" decoding="async"><span>{{ w.name }}</span>
         </a></li>
       {% endfor %}
@@ -681,7 +681,7 @@
       {% for s in synergies %}
         <li class="counter-row">
           {% if s.slug %}
-            <a href="{{ url_for('hero_page', slug=s.slug) }}">
+            <a href="{{ url_for('heroes.hero_page', slug=s.slug) }}">
               <img src="{{ s.head }}" alt="{{ s.name }}" width="48" height="48" loading="lazy" decoding="async">
               <span class="cname">{{ s.name }}</span>
             </a>
@@ -703,7 +703,7 @@
     <h3 class="sub-h3">Hero Partners</h3>
     <ul class="mini-hero-row">
       {% for w in works_with %}
-        <li><a href="{{ url_for('hero_page', slug=w.slug) }}">
+        <li><a href="{{ url_for('heroes.hero_page', slug=w.slug) }}">
           <img src="{{ w.head }}" alt="{{ w.name }}" width="56" height="56" loading="lazy" decoding="async"><span>{{ w.name }}</span>
         </a></li>
       {% endfor %}
@@ -752,7 +752,7 @@
   <p class="related-heroes-sub">Compare {{ detail.name }} with other {{ role|lower }} heroes in the current meta.</p>
   <div class="hero-link-grid">
     {% for rh in related_heroes %}
-    <a href="{{ url_for('hero_page', slug=rh.slug) }}" class="hero-link-card">
+    <a href="{{ url_for('heroes.hero_page', slug=rh.slug) }}" class="hero-link-card">
       <img src="{{ rh.head }}" alt="{{ rh.name }} icon"
            width="48" height="48" loading="lazy" decoding="async">
       <span class="hero-link-name">{{ rh.name }}</span>
@@ -770,7 +770,7 @@
   <h2>Related Guides for {{ detail.name }} Players</h2>
   <div class="related-grid">
     {% if role %}
-    <a class="related-card" href="{{ url_for('role_page', role=role|lower) }}"
+    <a class="related-card" href="{{ url_for('heroes.role_page', role=role|lower) }}"
        style="--rc: {{ role_color(role) }}">
       <span class="related-kicker">Role Tier List</span>
       <span class="related-title">Best {{ role }}s in MLBB {{ CURRENT_MONTH }}</span>
@@ -780,7 +780,7 @@
     {% for lane in (detail.lanes or [])[:2] %}
       {% set lane_slug = lane | lower | replace(' lane', '') | replace(' ', '') %}
       {% if lane_slug in LANE_META %}
-        <a class="related-card" href="{{ url_for('lane_page', lane=lane_slug) }}"
+        <a class="related-card" href="{{ url_for('heroes.lane_page', lane=lane_slug) }}"
            style="--rc: {{ LANE_META[lane_slug].color }}">
           <span class="related-kicker">Lane Tier List</span>
           <span class="related-title">Best {{ LANE_META[lane_slug].label }}s in MLBB {{ CURRENT_MONTH }}</span>
@@ -793,7 +793,7 @@
       <span class="related-title">MLBB Meta Report — {{ CURRENT_MONTH }}</span>
       <span class="related-desc">Is {{ detail.name }} a meta-definer this patch? Full ban/pick/hidden-OP breakdown.</span>
     </a>
-    <a class="related-card" href="{{ url_for('tier_list_page') }}">
+    <a class="related-card" href="{{ url_for('heroes.tier_list_page') }}">
       <span class="related-kicker">Full Tier List</span>
       <span class="related-title">MLBB Tier List {{ CURRENT_MONTH }}</span>
       <span class="related-desc">Every one of the {{ 132 }} MLBB heroes ranked SS through D by live win rate.</span>

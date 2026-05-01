@@ -72,7 +72,7 @@
 
 {% block content %}
 <nav class="breadcrumb" aria-label="Breadcrumb">
-  <a href="{{ url_for('index') }}">Heroes</a>
+  <a href="{{ url_for('heroes.index') }}">Heroes</a>
   <span class="sep">/</span>
   <span>{{ role }}s</span>
 </nav>
@@ -104,7 +104,7 @@
       ] %}
       {% set h = hero_pool[slot] %}
       {% if h %}
-      <a class="pool-card" href="{{ url_for('hero_page', slug=h.slug) }}">
+      <a class="pool-card" href="{{ url_for('heroes.hero_page', slug=h.slug) }}">
         <span class="pool-label">{{ label }}</span>
         <img src="{{ h.head }}" alt="{{ h.name }} — best {{ label|lower }} {{ role|lower }} in MLBB"
              width="72" height="72" loading="lazy" decoding="async">
@@ -124,7 +124,7 @@
   <ol class="meta-list">
     {% for h in top10 %}
       <li>
-        <a href="{{ url_for('hero_page', slug=h.slug) }}">
+        <a href="{{ url_for('heroes.hero_page', slug=h.slug) }}">
           <img src="{{ h.head }}" alt="{{ h.name }} MLBB {{ role|lower }}" width="40" height="40"
                decoding="async" {% if loop.index <= 3 %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>
           <span class="mn">{{ h.name }}</span>
@@ -157,7 +157,7 @@
     </h2>
     <div class="tier-row">
       {% for h in tier_buckets[letter] %}
-        <a class="tier-card" href="{{ url_for('hero_page', slug=h.slug) }}" title="{{ h.name }} — WR {{ pct(h.win_rate) }}">
+        <a class="tier-card" href="{{ url_for('heroes.hero_page', slug=h.slug) }}" title="{{ h.name }} — WR {{ pct(h.win_rate) }}">
           <img src="{{ h.head }}" alt="{{ h.name }}" width="88" height="88"
                loading="lazy" decoding="async">
           <span class="tc-name">{{ h.name }}</span>
@@ -175,7 +175,7 @@
     {% for role_name, color in ROLE_COLORS.items() %}
       {% if role_name != role %}
         <li>
-          <a class="role-link" href="{{ url_for('role_page', role=role_name|lower) }}"
+          <a class="role-link" href="{{ url_for('heroes.role_page', role=role_name|lower) }}"
              style="--rc: {{ color }}">
             <span class="role-link-name">Best {{ role_name }}s</span>
             <span class="role-link-arrow" aria-hidden="true">→</span>
@@ -190,7 +190,7 @@
 <section class="panel related-panel">
   <h2>Related MLBB Guides</h2>
   <div class="related-grid">
-    <a class="related-card" href="{{ url_for('lane_page', lane='jungle') }}" style="--rc: #8bc34a">
+    <a class="related-card" href="{{ url_for('heroes.lane_page', lane='jungle') }}" style="--rc: #8bc34a">
       <span class="related-kicker">By Lane</span>
       <span class="related-title">Best {{ role }}s by Lane</span>
       <span class="related-desc">Switch axis — see {{ role|lower }}s grouped by Jungle / Mid / Exp / Gold / Roam instead.</span>
@@ -200,7 +200,7 @@
       <span class="related-title">MLBB Meta Report — {{ CURRENT_MONTH }}</span>
       <span class="related-desc">See which {{ role|lower }}s are meta-definers, ban-priorities or hidden-OP this patch.</span>
     </a>
-    <a class="related-card" href="{{ url_for('tier_list_page') }}">
+    <a class="related-card" href="{{ url_for('heroes.tier_list_page') }}">
       <span class="related-kicker">Full Tier List</span>
       <span class="related-title">Full MLBB Tier List {{ CURRENT_MONTH }}</span>
       <span class="related-desc">Every MLBB hero ranked SS through D by live 7-day win rate, all roles and lanes combined.</span>

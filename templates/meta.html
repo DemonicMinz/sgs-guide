@@ -68,7 +68,7 @@
 <section class="conflict-notice">
   <p>⚠ <strong>{{ major_count }} hero{{ 's' if major_count != 1 else '' }}</strong>
      in the meta lists below show significant tier disagreement across external sources.
-     See the <a href="{{ url_for('tier_list_page') }}">tier list</a> for the disputed-ranking flags.</p>
+     See the <a href="{{ url_for('heroes.tier_list_page') }}">tier list</a> for the disputed-ranking flags.</p>
 </section>
 {% endif %}
 
@@ -78,7 +78,7 @@
     <ol class="meta-list">
       {% for h in by_wr %}
         <li>
-          <a href="{{ url_for('hero_page', slug=h.slug) }}">
+          <a href="{{ url_for('heroes.hero_page', slug=h.slug) }}">
             <img src="{{ h.head }}" alt="{{ h.name }}" width="40" height="40"
                  decoding="async" {% if loop.index <= 3 %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>
             <span class="mn">{{ h.name }}</span>
@@ -93,7 +93,7 @@
     <ol class="meta-list">
       {% for h in by_pick %}
         <li>
-          <a href="{{ url_for('hero_page', slug=h.slug) }}">
+          <a href="{{ url_for('heroes.hero_page', slug=h.slug) }}">
             <img src="{{ h.head }}" alt="{{ h.name }}" width="40" height="40"
                  loading="lazy" decoding="async">
             <span class="mn">{{ h.name }}</span>
@@ -108,7 +108,7 @@
     <ol class="meta-list">
       {% for h in by_ban %}
         <li>
-          <a href="{{ url_for('hero_page', slug=h.slug) }}">
+          <a href="{{ url_for('heroes.hero_page', slug=h.slug) }}">
             <img src="{{ h.head }}" alt="{{ h.name }}" width="40" height="40"
                  loading="lazy" decoding="async">
             <span class="mn">{{ h.name }}</span>

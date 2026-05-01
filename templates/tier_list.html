@@ -55,7 +55,7 @@
   <div class="filter-wrap">
     {% for r in ['all','epic','legend','mythic','honor','glory'] %}
       <a class="filter-btn {% if rank == r %}active{% endif %}"
-         href="{{ url_for('tier_list_page') }}?rank={{ r }}">{{ r|capitalize }}</a>
+         href="{{ url_for('heroes.tier_list_page') }}?rank={{ r }}">{{ r|capitalize }}</a>
     {% endfor %}
   </div>
 </section>
@@ -94,7 +94,7 @@
     </h2>
     <div class="tier-row">
       {% for h in buckets[letter] %}
-        <a class="tier-card" href="{{ url_for('hero_page', slug=h.slug) }}"
+        <a class="tier-card" href="{{ url_for('heroes.hero_page', slug=h.slug) }}"
            title="{{ h.name }} — WR {{ pct(h.win_rate) }}{% if h.conflict_severity == 'major' %} (disputed across external sources){% elif h.conflict_severity == 'minor' %} (mixed signals across sources){% endif %}">
           {% if h.conflict_severity == 'major' %}
             <span class="tc-flag tc-flag-major" aria-label="Disputed ranking">⚠</span>
@@ -122,7 +122,7 @@
   <ul class="role-link-grid">
     {% for role_name, color in ROLE_COLORS.items() %}
       <li>
-        <a class="role-link" href="{{ url_for('role_page', role=role_name|lower) }}"
+        <a class="role-link" href="{{ url_for('heroes.role_page', role=role_name|lower) }}"
            style="--rc: {{ color }}">
           <span class="role-link-name">Best {{ role_name }}s</span>
           <span class="role-link-arrow" aria-hidden="true">→</span>

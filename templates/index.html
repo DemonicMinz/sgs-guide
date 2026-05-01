@@ -121,7 +121,7 @@
   <p class="muted">The heroes ranked players consistently remove from the pick pool. High ban rate is the clearest sign of a hero being feared — or outright broken — in the current meta.</p>
   <div class="trending-row">
     {% for h in trending %}
-      <a class="trending-card" href="{{ url_for('hero_page', slug=h.slug) }}">
+      <a class="trending-card" href="{{ url_for('heroes.hero_page', slug=h.slug) }}">
         <span class="trend-rank">#{{ loop.index }}</span>
         <img src="{{ h.head }}" alt="{{ h.name }} — MLBB trending {{ (h.role or '') | lower }}"
              width="56" height="56"
@@ -147,7 +147,7 @@
   <h2>Current Meta — Top 10 by Win Rate</h2>
   <div class="meta-row">
     {% for h in top_meta %}
-      <a class="meta-chip" href="{{ url_for('hero_page', slug=h.slug) }}" title="{{ h.name }}">
+      <a class="meta-chip" href="{{ url_for('heroes.hero_page', slug=h.slug) }}" title="{{ h.name }}">
         <img src="{{ h.head }}" alt="{{ h.name }}"
              width="44" height="44" decoding="async"
              {% if loop.index <= 6 %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>
@@ -167,7 +167,7 @@
   <ul class="role-link-grid">
     {% for role_name, color in ROLE_COLORS.items() %}
       <li>
-        <a class="role-link" href="{{ url_for('role_page', role=role_name|lower) }}"
+        <a class="role-link" href="{{ url_for('heroes.role_page', role=role_name|lower) }}"
            style="--rc: {{ color }}">
           <span class="role-link-name">Best {{ role_name }}s</span>
           <span class="role-link-arrow" aria-hidden="true">→</span>
@@ -185,7 +185,7 @@
   <ul class="role-link-grid">
     {% for slug, meta in LANE_META.items() %}
       <li>
-        <a class="role-link" href="{{ url_for('lane_page', lane=slug) }}"
+        <a class="role-link" href="{{ url_for('heroes.lane_page', lane=slug) }}"
            style="--rc: {{ meta.color }}">
           <span class="role-link-name">Best {{ meta.label }}s</span>
           <span class="role-link-arrow" aria-hidden="true">→</span>
@@ -199,7 +199,7 @@
   <h2>All Heroes</h2>
   <div class="hero-grid" id="hero-grid">
     {% for h in heroes %}
-      <a class="hero-card" href="{{ url_for('hero_page', slug=h.slug) }}"
+      <a class="hero-card" href="{{ url_for('heroes.hero_page', slug=h.slug) }}"
          data-name="{{ h.name|lower }}"
          data-slug="{{ h.slug }}"
          data-role="{{ (h.role or '')|lower }}">

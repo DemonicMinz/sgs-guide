@@ -69,7 +69,7 @@
 
 {% block content %}
 <nav class="breadcrumb" aria-label="Breadcrumb">
-  <a href="{{ url_for('index') }}">Heroes</a>
+  <a href="{{ url_for('heroes.index') }}">Heroes</a>
   <span class="sep">/</span>
   <span>Patch Notes</span>
 </nav>
@@ -102,7 +102,7 @@
   <p>⚠ <strong>{{ major_count }} hero{{ 's' if major_count != 1 else '' }}</strong>
      in this report show significant tier disagreement across external sources.
      Disputed rankings are flagged with ⚠ on the
-     <a href="{{ url_for('tier_list_page') }}">tier list</a>.</p>
+     <a href="{{ url_for('heroes.tier_list_page') }}">tier list</a>.</p>
 </section>
 {% endif %}
 
@@ -117,7 +117,7 @@
   <ol class="meta-list patch-big-list">
     {% for h in meta_definers %}
       <li>
-        <a href="{{ url_for('hero_page', slug=h.slug) }}">
+        <a href="{{ url_for('heroes.hero_page', slug=h.slug) }}">
           <img src="{{ h.head }}" alt="{{ h.name }} — MLBB meta-defining hero"
                width="48" height="48"
                decoding="async" {% if loop.index <= 3 %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>
@@ -150,7 +150,7 @@
     <ol class="meta-list">
       {% for h in by_pick %}
         <li>
-          <a href="{{ url_for('hero_page', slug=h.slug) }}">
+          <a href="{{ url_for('heroes.hero_page', slug=h.slug) }}">
             <img src="{{ h.head }}" alt="{{ h.name }}" width="40" height="40" loading="lazy" decoding="async">
             <span class="mn">{{ h.name }}</span>
             <span class="mv">{{ pct(h.pick_rate, 2) }}</span>
@@ -166,7 +166,7 @@
     <ol class="meta-list">
       {% for h in by_ban %}
         <li>
-          <a href="{{ url_for('hero_page', slug=h.slug) }}">
+          <a href="{{ url_for('heroes.hero_page', slug=h.slug) }}">
             <img src="{{ h.head }}" alt="{{ h.name }}" width="40" height="40" loading="lazy" decoding="async">
             <span class="mn">{{ h.name }}</span>
             <span class="mv">{{ pct(h.ban_rate, 1) }}</span>
@@ -183,7 +183,7 @@
     <ol class="meta-list">
       {% for h in under_radar %}
         <li>
-          <a href="{{ url_for('hero_page', slug=h.slug) }}">
+          <a href="{{ url_for('heroes.hero_page', slug=h.slug) }}">
             <img src="{{ h.head }}" alt="{{ h.name }}" width="40" height="40" loading="lazy" decoding="async">
             <span class="mn">
               <span>{{ h.name }}</span>
@@ -211,7 +211,7 @@
   <ol class="meta-list patch-struggling">
     {% for h in struggling %}
       <li>
-        <a href="{{ url_for('hero_page', slug=h.slug) }}">
+        <a href="{{ url_for('heroes.hero_page', slug=h.slug) }}">
           <img src="{{ h.head }}" alt="{{ h.name }}" width="40" height="40" loading="lazy" decoding="async">
           <span class="mn">{{ h.name }}</span>
           <span class="mv tier-{{ h.tier }}">{{ pct(h.win_rate, 1) }}</span>
@@ -232,9 +232,9 @@
   </p>
   <p>
     Looking for the full picture? Dive into the
-    <a href="{{ url_for('tier_list_page') }}">full SS-D tier list</a>,
-    a specific <a href="{{ url_for('role_page', role='tank') }}">role page</a>,
-    or a <a href="{{ url_for('lane_page', lane='jungle') }}">lane page</a>
+    <a href="{{ url_for('heroes.tier_list_page') }}">full SS-D tier list</a>,
+    a specific <a href="{{ url_for('heroes.role_page', role='tank') }}">role page</a>,
+    or a <a href="{{ url_for('heroes.lane_page', lane='jungle') }}">lane page</a>
     — all built from the same live data.
   </p>
   <p class="muted">

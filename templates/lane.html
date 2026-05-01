@@ -81,7 +81,7 @@
 
 {% block content %}
 <nav class="breadcrumb" aria-label="Breadcrumb">
-  <a href="{{ url_for('index') }}">Heroes</a>
+  <a href="{{ url_for('heroes.index') }}">Heroes</a>
   <span class="sep">/</span>
   <span>{{ lane_name }}</span>
 </nav>
@@ -105,7 +105,7 @@
   <ul class="lane-role-breakdown">
     {% for role, count in role_breakdown %}
       <li>
-        <a href="{{ url_for('role_page', role=role|lower) }}" class="lrb-chip"
+        <a href="{{ url_for('heroes.role_page', role=role|lower) }}" class="lrb-chip"
            style="--rc: {{ ROLE_COLORS.get(role, '#FFD700') }}">
           <span class="lrb-role">{{ role }}</span>
           <span class="lrb-count">{{ count }} hero{% if count != 1 %}es{% endif %}</span>
@@ -135,7 +135,7 @@
       ] %}
       {% set h = hero_pool[slot] %}
       {% if h %}
-      <a class="pool-card" href="{{ url_for('hero_page', slug=h.slug) }}">
+      <a class="pool-card" href="{{ url_for('heroes.hero_page', slug=h.slug) }}">
         <span class="pool-label">{{ label }}</span>
         <img src="{{ h.head }}" alt="{{ h.name }} — best {{ label|lower }} {{ lane_name|lower }} in MLBB"
              width="72" height="72" loading="lazy" decoding="async">
@@ -166,7 +166,7 @@
   <ol class="meta-list">
     {% for h in top10 %}
       <li>
-        <a href="{{ url_for('hero_page', slug=h.slug) }}">
+        <a href="{{ url_for('heroes.hero_page', slug=h.slug) }}">
           <img src="{{ h.head }}" alt="{{ h.name }} — MLBB {{ lane_name|lower }} hero" width="40" height="40"
                decoding="async" {% if loop.index <= 3 %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>
           <span class="mn">{{ h.name }}</span>
@@ -199,7 +199,7 @@
     </h2>
     <div class="tier-row">
       {% for h in tier_buckets[letter] %}
-        <a class="tier-card" href="{{ url_for('hero_page', slug=h.slug) }}" title="{{ h.name }} — WR {{ pct(h.win_rate) }}">
+        <a class="tier-card" href="{{ url_for('heroes.hero_page', slug=h.slug) }}" title="{{ h.name }} — WR {{ pct(h.win_rate) }}">
           <img src="{{ h.head }}" alt="{{ h.name }}" width="88" height="88"
                loading="lazy" decoding="async">
           <span class="tc-name">{{ h.name }}</span>
@@ -217,7 +217,7 @@
     {% for slug, meta in LANE_META.items() %}
       {% if slug != lane_slug %}
         <li>
-          <a class="role-link" href="{{ url_for('lane_page', lane=slug) }}"
+          <a class="role-link" href="{{ url_for('heroes.lane_page', lane=slug) }}"
              style="--rc: {{ meta.color }}">
             <span class="role-link-name">Best {{ meta.label }}s</span>
             <span class="role-link-arrow" aria-hidden="true">→</span>
@@ -234,7 +234,7 @@
   <div class="related-grid">
     {% if role_breakdown %}
       {% set dominant_role = role_breakdown[0][0] %}
-      <a class="related-card" href="{{ url_for('role_page', role=dominant_role|lower) }}"
+      <a class="related-card" href="{{ url_for('heroes.role_page', role=dominant_role|lower) }}"
          style="--rc: {{ ROLE_COLORS.get(dominant_role, '#FFD700') }}">
         <span class="related-kicker">By Role</span>
         <span class="related-title">Best {{ dominant_role }}s in MLBB {{ CURRENT_MONTH }}</span>
@@ -246,7 +246,7 @@
       <span class="related-title">MLBB Meta Report — {{ CURRENT_MONTH }}</span>
       <span class="related-desc">See which {{ lane_name|lower }} heroes are meta-definers, ban-priorities or hidden-OP this patch.</span>
     </a>
-    <a class="related-card" href="{{ url_for('tier_list_page') }}">
+    <a class="related-card" href="{{ url_for('heroes.tier_list_page') }}">
       <span class="related-kicker">Full Tier List</span>
       <span class="related-title">Full MLBB Tier List {{ CURRENT_MONTH }}</span>
       <span class="related-desc">Every MLBB hero ranked SS through D by live 7-day win rate, all roles and lanes combined.</span>

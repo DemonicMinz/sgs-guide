@@ -105,8 +105,8 @@ function gtag_report_conversion(url) {
 <link rel="stylesheet" href="{{ static_url('style.css') }}">
 
 <!-- Prefetch likely next navigation for repeat visitors (tier list is #2 page). -->
-{% if request.endpoint == 'index' %}
-<link rel="prefetch" href="{{ url_for('tier_list_page') }}" as="document">
+{% if request.endpoint == 'heroes.index' %}
+<link rel="prefetch" href="{{ url_for('heroes.tier_list_page') }}" as="document">
 <link rel="prefetch" href="{{ url_for('meta_page') }}" as="document">
 {% endif %}
 
@@ -205,7 +205,7 @@ function gtag_report_conversion(url) {
 
 <header class="site-header">
   <div class="container header-inner">
-    <a class="brand" href="{{ url_for('index') }}">
+    <a class="brand" href="{{ url_for('heroes.index') }}">
       <span class="brand-badge">SGS</span>
       <span class="brand-text">
         <span class="brand-name">
@@ -217,8 +217,8 @@ function gtag_report_conversion(url) {
       </span>
     </a>
     <nav class="site-nav" aria-label="Primary">
-      <a href="{{ url_for('index') }}"{% if request.endpoint == 'index' %} aria-current="page"{% endif %}>Heroes</a>
-      <a href="{{ url_for('tier_list_page') }}"{% if request.endpoint == 'tier_list_page' %} aria-current="page"{% endif %}>Tier List/Meta</a>
+      <a href="{{ url_for('heroes.index') }}"{% if request.endpoint == 'heroes.index' %} aria-current="page"{% endif %}>Heroes</a>
+      <a href="{{ url_for('heroes.tier_list_page') }}"{% if request.endpoint == 'heroes.tier_list_page' %} aria-current="page"{% endif %}>Tier List/Meta</a>
       <a href="{{ url_for('meta_page') }}"{% if request.endpoint == 'meta_page' %} aria-current="page"{% endif %}>Stats</a>
       <a href="{{ url_for('patch_notes_page') }}"{% if request.endpoint == 'patch_notes_page' %} aria-current="page"{% endif %}>Patch Notes</a>
       {% if topup_enabled %}
@@ -286,8 +286,8 @@ function gtag_report_conversion(url) {
   <div class="container">
     <p>&copy; {{ YEAR }} {{ SITE_NAME }}. Not affiliated with Moonton.</p>
     <p class="foot-links">
-      <a href="{{ url_for('index') }}">Heroes</a> ·
-      <a href="{{ url_for('tier_list_page') }}">Tier List/Meta</a> ·
+      <a href="{{ url_for('heroes.index') }}">Heroes</a> ·
+      <a href="{{ url_for('heroes.tier_list_page') }}">Tier List/Meta</a> ·
       <a href="{{ url_for('meta_page') }}">Stats</a> ·
       <a href="{{ url_for('patch_notes_page') }}">Patch Notes</a> ·
       {% if topup_enabled %}
