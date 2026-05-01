@@ -151,91 +151,17 @@ app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 60 * 60 * 24 * 365
 
 
 # --------------------------------------------------------------------------- #
-# Cache layer: disk + memory, 6h TTL, graceful fallback when API is down.
+# Cache layer + cached HTTP wrapper now live in lib/openmlbb.py (Sprint 4
+# Phase A, step 1). Public names are re-exported here so the rest of app.py
+# and any downstream callers keep working unchanged.
 # --------------------------------------------------------------------------- #
-_memory_cache: dict[str, tuple[float, Any]] = {}
-_cache_lock = threading.Lock()
-
-
-def _cache_path(key: str) -> Path:
-    safe = re.sub(r"[^a-zA-Z0-9_-]+", "_", key)
-    return CACHE_DIR / f"{safe}.json"
-
-
-def _read_disk_cache(key: str) -> tuple[float, Any] | None:
-    path = _cache_path(key)
-    if not path.exists():
-        return None
-    try:
-        raw = json.loads(path.read_text(encoding="utf-8"))
-        return raw.get("timestamp", 0), raw.get("data")
-    except Exception:
-        return None
-
-
-def _write_disk_cache(key: str, data: Any) -> None:
-    path = _cache_path(key)
-    payload = {"timestamp": time.time(), "data": data}
-    path.write_text(json.dumps(payload), encoding="utf-8")
-
-
-def make_cache_key(path: str, params: dict[str, Any] | None = None) -> str:
-    """Canonical cache key: path + alphabetically-sorted querystring."""
-    if not params:
-        return path
-    return path + "?" + "&".join(f"{k}={v}" for k, v in sorted(params.items()))
-
-
-def cache_modified_iso(cache_key: str) -> str | None:
-    """ISO timestamp (UTC) of when a cache file was last written, or None.
-
-    Used by sitemap-heroes.xml to emit per-hero <lastmod> values, so Google
-    only re-crawls heroes whose stats actually changed instead of re-fetching
-    every page on every sitemap visit.
-    """
-    try:
-        path = _cache_path(cache_key)
-        if not path.exists():
-            return None
-        ts = path.stat().st_mtime
-        return datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    except Exception:  # noqa: BLE001
-        return None
-
-
-def api_get(path: str, params: dict[str, Any] | None = None) -> Any:
-    """Cached GET against the OpenMLBB API with graceful fallback."""
-    key = make_cache_key(path, params)
-    now = time.time()
-
-    with _cache_lock:
-        hit = _memory_cache.get(key)
-    if hit and (now - hit[0]) < CACHE_SECONDS:
-        return hit[1]
-
-    disk = _read_disk_cache(key)
-    if disk and (now - disk[0]) < CACHE_SECONDS:
-        with _cache_lock:
-            _memory_cache[key] = disk
-        return disk[1]
-
-    # Fetch fresh
-    url = f"{API_BASE}{path}"
-    try:
-        with httpx.Client(timeout=REQUEST_TIMEOUT, headers={"User-Agent": "SGS-MLBB-Guide/1.0"}) as client:
-            resp = client.get(url, params=params or {})
-            resp.raise_for_status()
-            data = resp.json()
-        with _cache_lock:
-            _memory_cache[key] = (now, data)
-        _write_disk_cache(key, data)
-        return data
-    except Exception as exc:
-        log.warning("API fetch failed for %s — %s", key, exc)
-        if disk:
-            log.info("Serving stale cache for %s", key)
-            return disk[1]
-        return None
+from lib.openmlbb import (
+    api_get,
+    cache_age_text,
+    cache_modified_iso,
+    make_cache_key,
+    _read_disk_cache,  # used by health-check probes below
+)
 
 
 # --------------------------------------------------------------------------- #
@@ -1345,17 +1271,7 @@ ROLE_INTRO = {
 # --------------------------------------------------------------------------- #
 # Template context helpers
 # --------------------------------------------------------------------------- #
-def cache_age_text(path_key: str) -> str:
-    disk = _read_disk_cache(path_key)
-    if not disk:
-        return "just now"
-    age = max(0, int(time.time() - disk[0]))
-    if age < 60:
-        return "just now"
-    if age < 3600:
-        return f"{age // 60} minutes ago"
-    hours = age // 3600
-    return f"{hours} hour{'s' if hours != 1 else ''} ago"
+# (cache_age_text moved to lib/openmlbb.py and re-exported above.)
 
 
 # --------------------------------------------------------------------------- #
