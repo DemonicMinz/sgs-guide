@@ -45,7 +45,7 @@ def sitemap() -> Response:
     lastmod = datetime.now(timezone.utc).date().isoformat()
     parts = ['<?xml version="1.0" encoding="UTF-8"?>',
              '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
-    for name in ("sitemap-core.xml", "sitemap-heroes.xml",
+    for name in ("sitemap-core.xml", "sitemap-heroes.xml", "sitemap-counters.xml",
                  "sitemap-roles.xml", "sitemap-lanes.xml", "sitemap-images.xml"):
         parts.append(
             f"<sitemap><loc>{base}/{name}</loc><lastmod>{lastmod}</lastmod></sitemap>"
@@ -116,6 +116,34 @@ def sitemap_heroes() -> Response:
             f"<url><loc>{base}/hero/{h['slug']}</loc>"
             f"<lastmod>{hero_lastmod}</lastmod>"
             f"<changefreq>daily</changefreq><priority>0.8</priority></url>"
+        )
+    parts.append("</urlset>")
+    return Response("\n".join(parts), mimetype="application/xml")
+
+
+@bp.route("/sitemap-counters.xml")
+def sitemap_counters() -> Response:
+    """One entry per /counter/<slug> page — 132 long-tail counter guides.
+
+    Each entry uses the same per-hero stats cache mtime as sitemap-heroes,
+    so Google sees both pages as updating together when stats change.
+    """
+    from app import dynamic_site_url
+    base = dynamic_site_url()
+    heroes = get_all_heroes()
+    fallback_lastmod = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    parts = ['<?xml version="1.0" encoding="UTF-8"?>',
+             '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+    for h in heroes:
+        stats_key = make_cache_key(
+            f"/api/heroes/{h['id']}/stats",
+            {"rank": "all"},
+        )
+        hero_lastmod = cache_modified_iso(stats_key) or fallback_lastmod
+        parts.append(
+            f"<url><loc>{base}/counter/{h['slug']}</loc>"
+            f"<lastmod>{hero_lastmod}</lastmod>"
+            f"<changefreq>daily</changefreq><priority>0.7</priority></url>"
         )
     parts.append("</urlset>")
     return Response("\n".join(parts), mimetype="application/xml")
@@ -242,6 +270,7 @@ def robots() -> Response:
         f"Sitemap: {base}/sitemap.xml",
         f"Sitemap: {base}/sitemap-core.xml",
         f"Sitemap: {base}/sitemap-heroes.xml",
+        f"Sitemap: {base}/sitemap-counters.xml",
         f"Sitemap: {base}/sitemap-roles.xml",
         f"Sitemap: {base}/sitemap-lanes.xml",
         f"Sitemap: {base}/sitemap-images.xml",

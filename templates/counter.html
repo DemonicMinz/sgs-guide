@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% set hero_img = detail.painting or detail.head_big or detail.head %}
+
+{% block og_image %}
+{% if hero_img %}
+<meta property="og:image" content="{{ hero_img }}">
+<meta property="og:image:alt" content="How to counter {{ name }} in MLBB">
+<meta name="twitter:image" content="{{ hero_img }}">
+{% else %}
+<meta property="og:image" content="{{ SITE_URL }}{{ static_url('og-default.png') }}">
+<meta name="twitter:image" content="{{ SITE_URL }}{{ static_url('og-default.png') }}">
+{% endif %}
+{% endblock %}
+
+{% block schema %}
+{# Article schema — Google's primary content container for guide-style pages. #}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "@id": "{{ SITE_URL }}{{ canonical }}#article",
+  "isPartOf": { "@id": "{{ SITE_URL }}/#website" },
+  "publisher": { "@id": "{{ SITE_URL }}/#organization" },
+  "author": { "@id": "{{ SITE_URL }}/#organization" },
+  "headline": "How to Counter {{ name }} in MLBB — {{ current_month }} Counter Guide",
+  "description": {{ page_desc | tojson }},
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "{{ SITE_URL }}{{ canonical }}" },
+  {% if hero_img %}"image": "{{ hero_img }}",{% endif %}
+  "datePublished": "{{ TODAY_ISO }}",
+  "dateModified": "{{ TODAY_ISO }}",
+  "inLanguage": "{{ LANG_TAG }}",
+  "about": {
+    "@type": "VideoGame",
+    "name": "Mobile Legends: Bang Bang",
+    "alternateName": ["MLBB", "Mobile Legends"],
+    "applicationCategory": "GameApplication"
+  }
+}
+</script>
+
+{# Breadcrumb — Home > Counter Guides > [Hero] #}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "{{ SITE_URL }}/" },
+    { "@type": "ListItem", "position": 2, "name": "{{ name }}", "item": "{{ SITE_URL }}/hero/{{ target.slug }}" },
+    { "@type": "ListItem", "position": 3, "name": "Counter {{ name }}", "item": "{{ SITE_URL }}{{ canonical }}" }
+  ]
+}
+</script>
+
+{# FAQ schema — the single biggest SERP real-estate win for "how to" queries.
+   Google expands these into inline accordion results, which doubles CTR
+   without needing higher position. #}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "inLanguage": "{{ LANG_TAG }}",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Who counters {{ name }} the hardest in MLBB?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "{% if counters %}{{ counters[0].name }} is currently the strongest counter to {{ name }}, with a {{ pct(counters[0].win_rate, 1) }} win rate in the matchup ({{ pct(counters[0].increase, 1) }} above average). The top three counters are {% for c in counters[:3] %}{{ c.name }}{% if not loop.last %}, {% endif %}{% endfor %}.{% else %}{{ name }} has no clearly dominant counter in the current meta — focus on item counters and positioning instead.{% endif %}"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What items counter {{ name }} in MLBB?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "{% if counter_items %}The strongest items against {{ name }} are {% for it in counter_items %}{{ it.name }}{% if not loop.last %}, {% endif %}{% endfor %}. Build them in your second or third item slot.{% else %}{{ name }} doesn't have a single hard item counter — focus on hero counter-picks and positioning.{% endif %}"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is {{ name }} hard to counter in MLBB?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "{% if counters and (counters[0].increase or 0) >= 0.05 %}{{ name }} has clear hard counters — {{ counters[0].name }} alone gives a {{ pct(counters[0].increase, 1) }} matchup advantage. Pick a counter, build the right items, and {{ name }} becomes very manageable.{% else %}{{ name }} doesn't have a single hero who hard-counters them. The matchup is more about positioning, item priority and team coordination than picking a specific counter.{% endif %} {{ name }} currently has a {{ wr_pct }} overall win rate, {{ pr_pct }} pick rate and {{ br_pct }} ban rate."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do you beat {{ name }} as a {{ role|lower }}?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "{% for tip in strategy_tips[:2] %}{{ tip }}{% if not loop.last %} {% endif %}{% endfor %}"
+      }
+    }
+  ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="{{ url_for('heroes.index') }}">Heroes</a>
+  <span class="sep">/</span>
+  <a href="{{ url_for('heroes.hero_page', slug=target.slug) }}">{{ name }}</a>
+  <span class="sep">/</span>
+  <span>Counter</span>
+</nav>
+
+<section class="page-head counter-head">
+  <p class="counter-kicker">Live counter data · Updated {{ updated }}</p>
+  <h1>How to Counter {{ name }} in MLBB</h1>
+  <p class="lede">
+    The best counter picks for <strong>{{ name }}</strong> in {{ current_month }},
+    pulled from real Mobile Legends ranked match data. {% if top_counter %}<strong>{{ top_counter }}</strong>
+    is currently the strongest counter pick, with the top win rate in the matchup.{% endif %}
+    Updated every 6 hours.
+  </p>
+  <div class="counter-target-stats">
+    <div class="cts-item">
+      <span class="cts-label">{{ name }}'s win rate</span>
+      <span class="cts-value tier-{{ tier }}">{{ wr_pct }}</span>
+    </div>
+    <div class="cts-item">
+      <span class="cts-label">Pick rate</span>
+      <span class="cts-value">{{ pr_pct }}</span>
+    </div>
+    <div class="cts-item">
+      <span class="cts-label">Ban rate</span>
+      <span class="cts-value">{{ br_pct }}</span>
+    </div>
+    <div class="cts-item">
+      <span class="cts-label">Role</span>
+      <span class="cts-value">{{ role }}</span>
+    </div>
+  </div>
+</section>
+
+{# Section 1: the counter-pick list. The whole reason this page exists. #}
+{% if counters %}
+<section class="counter-section">
+  <h2>Top {{ counters|length }} Counter Picks for {{ name }}</h2>
+  <p class="muted">Heroes that statistically perform above average against {{ name }} in ranked play. Win rate is shown vs {{ name }} specifically, not the hero's overall win rate.</p>
+  <ol class="counter-list">
+    {% for c in counters %}
+      <li class="counter-row strength-{{ c.strength }}">
+        <a href="{{ url_for('heroes.hero_page', slug=c.slug) }}">
+          <span class="counter-rank">#{{ loop.index }}</span>
+          <img src="{{ c.head }}" alt="{{ c.name }} counters {{ name }} in MLBB"
+               width="56" height="56"
+               {% if loop.index <= 3 %}fetchpriority="high"{% else %}loading="lazy"{% endif %}
+               decoding="async">
+          <div class="counter-info">
+            <span class="counter-name">{{ c.name }}</span>
+            {% if c.role %}<span class="counter-role">{{ c.role }}</span>{% endif %}
+            <span class="counter-strength-tag strength-{{ c.strength }}">
+              {{ c.strength|capitalize }} counter
+            </span>
+          </div>
+          <div class="counter-stats">
+            <span class="counter-wr">{{ pct(c.win_rate, 1) }}</span>
+            <span class="counter-wr-label">vs {{ name }}</span>
+            <span class="counter-increase">+{{ pct(c.increase, 1) }} edge</span>
+          </div>
+        </a>
+        <p class="counter-explain">{{ c.strength_explain }}</p>
+      </li>
+    {% endfor %}
+  </ol>
+</section>
+{% endif %}
+
+{# Section 2: items that work against the target's kit. #}
+{% if counter_items %}
+<section class="counter-section">
+  <h2>Items That Counter {{ name }}</h2>
+  <p class="muted">The most effective item picks against {{ name }}'s kit — derived from {{ name }}'s speciality tags and role.</p>
+  <ul class="counter-item-grid">
+    {% for it in counter_items %}
+      <li>
+        {% if it.icon %}<img src="{{ it.icon }}" alt="{{ it.name }} — counter item for {{ name }}" width="48" height="48" loading="lazy" decoding="async">{% endif %}
+        <div>
+          <span class="counter-item-name">{{ it.name }}</span>
+          <span class="counter-item-reason">{{ it.reason }}</span>
+        </div>
+      </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+{# Section 3: how-to-beat strategy tips, role-keyed. #}
+<section class="counter-section">
+  <h2>How to Beat {{ name }} — Strategy</h2>
+  <p class="muted">{{ name }} is a <strong>{{ role|lower }}</strong>. The same strategic principles that beat {{ role|lower }}s in general apply to {{ name }} specifically:</p>
+  <ol class="counter-strategy-list">
+    {% for tip in strategy_tips %}
+      <li>{{ tip }}</li>
+    {% endfor %}
+  </ol>
+</section>
+
+{# Section 4: cross-link back to the hero's own page + sibling counter pages. #}
+<section class="counter-section counter-related">
+  <h2>More on {{ name }}</h2>
+  <div class="related-grid">
+    <a class="related-card" href="{{ url_for('heroes.hero_page', slug=target.slug) }}">
+      <span class="related-kicker">Hero Guide</span>
+      <span class="related-title">How to play {{ name }}</span>
+      <span class="related-desc">Best build, emblem, combos, tips and synergies for {{ name }} in {{ current_month }}.</span>
+    </a>
+    {% if role %}
+    <a class="related-card" href="{{ url_for('heroes.role_page', role=role|lower) }}">
+      <span class="related-kicker">{{ role }} Tier List</span>
+      <span class="related-title">All {{ role|lower }} heroes ranked</span>
+      <span class="related-desc">See how {{ name }} ranks against every other {{ role|lower }} by live win rate.</span>
+    </a>
+    {% endif %}
+    <a class="related-card" href="{{ url_for('heroes.tier_list_page') }}">
+      <span class="related-kicker">Full Tier List</span>
+      <span class="related-title">MLBB Tier List {{ current_month }}</span>
+      <span class="related-desc">Every MLBB hero ranked SS through D — cross-verified across 4 sources.</span>
+    </a>
+  </div>
+</section>
+{% endblock %}

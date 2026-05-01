@@ -769,6 +769,11 @@
 <section class="panel related-panel">
   <h2>Related Guides for {{ detail.name }} Players</h2>
   <div class="related-grid">
+    <a class="related-card" href="{{ url_for('heroes.counter_page', slug=detail.slug) }}">
+      <span class="related-kicker">Counter Guide</span>
+      <span class="related-title">How to counter {{ detail.name }}</span>
+      <span class="related-desc">Top counter picks, items and strategy for beating {{ detail.name }} in MLBB ranked play.</span>
+    </a>
     {% if role %}
     <a class="related-card" href="{{ url_for('heroes.role_page', role=role|lower) }}"
        style="--rc: {{ role_color(role) }}">
