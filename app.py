@@ -39,39 +39,44 @@ BASE_DIR = Path(__file__).resolve().parent
 CACHE_DIR = BASE_DIR / "cache"
 CACHE_DIR.mkdir(exist_ok=True)
 
-API_BASE = "https://openmlbb.fastapicloud.dev"
-CACHE_SECONDS = 6 * 60 * 60  # 6 hours
-REQUEST_TIMEOUT = 20.0
-PORT = int(os.getenv("PORT", "8085"))
+# Sourced from config.py — the single source of truth for env-var reads.
+# Module-level aliases preserved so the rest of app.py and Jinja templates
+# don't need to change.
+from config import config as _config
 
-SITE_NAME = "Singapore Gaming Syndicate"
-SITE_SHORT = "SGS"
-SITE_TAGLINE = "Where Singapore's Best Gamers Operate"
+API_BASE = _config.API_BASE
+CACHE_SECONDS = _config.CACHE_SECONDS
+REQUEST_TIMEOUT = _config.REQUEST_TIMEOUT
+PORT = _config.PORT
+
+SITE_NAME = _config.SITE_NAME
+SITE_SHORT = _config.SITE_SHORT
+SITE_TAGLINE = _config.SITE_TAGLINE
 # SITE_URL: if unset or placeholder, we fall back to the live request host
 # (so Cloudflare-tunnel URLs / future real domain just work without code edits).
-_SITE_URL_ENV = (os.getenv("SITE_URL") or "").strip().rstrip("/")
+_SITE_URL_ENV = _config.SITE_URL
 _PLACEHOLDER_HOSTS = {"sgs.singapore", "example.com", "localhost", ""}
 SITE_URL = _SITE_URL_ENV  # may be "" — see dynamic_site_url() below
 
-TELEGRAM_URL = "https://t.me/SingaporeGamingSyndicate"
-GA4_ID = os.getenv("GA4_ID", "")  # placeholder
+TELEGRAM_URL = _config.TELEGRAM_URL
+GA4_ID = _config.GA4_ID  # placeholder
 
 # Search-engine verification tags (paste the content value from each console).
 # Leave blank until you have them; the meta tags just won't render.
-GOOGLE_VERIFICATION = os.getenv("GOOGLE_SITE_VERIFICATION", "")
-BING_VERIFICATION   = os.getenv("BING_SITE_VERIFICATION", "")
-YANDEX_VERIFICATION = os.getenv("YANDEX_SITE_VERIFICATION", "")
+GOOGLE_VERIFICATION = _config.GOOGLE_VERIFICATION
+BING_VERIFICATION   = _config.BING_VERIFICATION
+YANDEX_VERIFICATION = _config.YANDEX_VERIFICATION
 
 # IndexNow key — free instant-indexing protocol for Bing / Yandex / Seznam /
 # Naver. Generate with `python tools/generate_indexnow_key.py`. Once set, the
 # key is hex-only, verified by a self-hosted file at /indexnow-<KEY>.txt.
-INDEXNOW_KEY = (os.getenv("INDEXNOW_KEY") or "").strip()
+INDEXNOW_KEY = _config.INDEXNOW_KEY
 # Validation below after `log` is initialized — deferred so we don't crash at import.
 
 # Feature flag — flip to "true" in .env to expose the Top Up section
 # (routes, nav links, sitemap entries). All top-up code stays loaded on disk
 # regardless; this only gates user-facing entry points.
-TOPUP_ENABLED = os.getenv("TOPUP_ENABLED", "false").strip().lower() in ("1", "true", "yes", "on")
+TOPUP_ENABLED = _config.TOPUP_ENABLED
 
 # Geo-targeting — hard-coded to Singapore for this site's audience.
 GEO_REGION = "SG"

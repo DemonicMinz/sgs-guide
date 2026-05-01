@@ -4,3 +4,6 @@ python-dotenv==1.0.1
 gunicorn==23.0.0
 flask-compress==1.15
 brotli==1.1.0
+
+# Dev / test only — not imported by app.py at runtime.
+pytest==8.4.0
