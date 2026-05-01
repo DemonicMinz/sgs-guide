@@ -1,6 +1,18 @@
 {% extends "base.html" %}
 
 {% block schema %}
+<!-- BreadcrumbList — anchors the homepage in the site hierarchy for SERP rich
+     results, even though it has only one entry. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "{{ SITE_URL }}/" }
+  ]
+}
+</script>
+
 <!-- CollectionPage + ItemList: proves to Google that this is a curated index
      of related content (Mobile Legends heroes), not a thin landing page. -->
 <script type="application/ld+json">

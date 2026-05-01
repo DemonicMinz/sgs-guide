@@ -1835,11 +1835,12 @@ def hero_page(slug: str) -> str:
         f"{name} Guide {current_month} — Best Build, Counter & "
         f"Combo | SGS Singapore"
     )
+    # Kept under Google's ~155-char limit even for long hero names like
+    # "Yi Sun-shin" / "Popol and Kupa" — avoids mid-sentence SERP truncation.
     page_desc = (
-        f"{name} MLBB guide ({current_month}): best build, emblem, spell, "
-        f"combos, counters and pro tips. Live {wr_pct} win rate from real "
-        f"ranked matches. Join Singapore's #1 Mobile Legends community on "
-        f"Telegram."
+        f"{name} MLBB guide for {current_month}: best build, emblem, spell, "
+        f"combos and counters. Live {wr_pct} win rate from SG ranked. "
+        f"Updated daily."
     )
     page_keywords = ", ".join([
         f"{name} guide", f"{name} build {current_month.lower()}",

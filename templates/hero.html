@@ -199,6 +199,32 @@
       <span class="updated-badge">Updated <time datetime="{{ TODAY_ISO }}">{{ UPDATED_HUMAN }}</time></span>
       &middot; live data refreshed {{ updated }} · every 6 hours
     </p>
+
+    {# TL;DR fact panel — structured <dl> markup is the format AI search
+       engines (ChatGPT, Perplexity, Google AI Overviews) preferentially
+       lift. Skips WR/Difficulty (already in stat-grid above) and surfaces
+       the four high-value fields they don't already cover. #}
+    <section class="hero-tldr" aria-labelledby="tldr-heading-{{ detail.slug }}">
+      <h2 id="tldr-heading-{{ detail.slug }}" class="visually-hidden">{{ detail.name }} Quick Summary</h2>
+      <dl class="tldr-grid">
+        <div>
+          <dt>Tier</dt>
+          <dd>{{ tier }}</dd>
+        </div>
+        <div>
+          <dt>Best Lane</dt>
+          <dd>{% if detail.lanes %}{{ detail.lanes[0] }}{% else %}Any{% endif %}</dd>
+        </div>
+        <div>
+          <dt>Hard Counters</dt>
+          <dd>{% for c in counters[:3] %}{{ c.name }}{% if not loop.last %}, {% endif %}{% else %}—{% endfor %}</dd>
+        </div>
+        <div>
+          <dt>Best Synergy</dt>
+          <dd>{% for s in synergies[:3] %}{{ s.name }}{% if not loop.last %}, {% endif %}{% else %}—{% endfor %}</dd>
+        </div>
+      </dl>
+    </section>
   </div>
 </article>
 
