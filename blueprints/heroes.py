@@ -27,7 +27,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from flask import Blueprint, abort, render_template, request
+from flask import Blueprint, abort, redirect, render_template, request, url_for
 
 from lib.openmlbb import (
     _EXECUTOR,
@@ -670,5 +670,132 @@ def counter_page(slug: str) -> str:
             f"who counters {name.lower()}, {name} counter {current_month.lower()}"
         ),
         canonical=f"/counter/{slug}",
+        hide_cta_band=True,
+    )
+
+
+# --------------------------------------------------------------------------- #
+# Hero-vs-hero matchup pages — /vs/<slug_a>/<slug_b>
+# --------------------------------------------------------------------------- #
+# Long-tail matchup queries: "[hero a] vs [hero b]", "[a] or [b] mlbb",
+# "is [a] better than [b]". Up to ~17,000 ordered pairs across 132 heroes.
+#
+# SAFETY GUARDRAILS to avoid being seen as a doorway-page farm by Google:
+#   1. Canonical URL is ALPHA-ORDERED. /vs/zhuxin/aamon redirects 301 to
+#      /vs/aamon/zhuxin so only one URL exists per pair (cuts the keyword
+#      surface from ~17k to ~8.6k pairs).
+#   2. Sitemap (/sitemap-vs.xml) only lists the top-20 × top-20 by combined
+#      pick rate — ~200 entries, not the full 8.6k combinatorial.
+#      Less-popular pairs are still routable and indexable if a real user
+#      links to them, but we don't ASK Google to crawl them.
+#   3. Each page has substantive unique content: head-to-head stats,
+#      directional counter analysis, role/lane comparison, FAQ. Not a
+#      bare two-stat-block doorway.
+#   4. Self-pair (/vs/aamon/aamon) returns 404.
+
+@bp.route("/vs/<slug_a>/<slug_b>")
+def vs_page(slug_a: str, slug_b: str):
+    from app import SITE_NAME  # lazy
+
+    if slug_a == slug_b:
+        abort(404)
+    # Canonical = alpha order. Redirect 301 if user / scraper hit the
+    # reversed URL so we don't split link equity across two URLs.
+    if slug_a > slug_b:
+        return redirect(url_for("heroes.vs_page", slug_a=slug_b, slug_b=slug_a), code=301)
+
+    heroes = get_all_heroes()
+    by_slug = {h["slug"]: h for h in heroes}
+    a = by_slug.get(slug_a)
+    b = by_slug.get(slug_b)
+    if not a or not b:
+        abort(404)
+
+    # Parallel fan-out for both heroes.
+    fa_detail   = _EXECUTOR.submit(get_hero_detail, a["id"])
+    fb_detail   = _EXECUTOR.submit(get_hero_detail, b["id"])
+    fa_stats    = _EXECUTOR.submit(get_hero_stats,  a["id"])
+    fb_stats    = _EXECUTOR.submit(get_hero_stats,  b["id"])
+    fa_counters = _EXECUTOR.submit(get_hero_counters, a["id"])
+    fb_counters = _EXECUTOR.submit(get_hero_counters, b["id"])
+
+    a_detail = fa_detail.result() or {}
+    b_detail = fb_detail.result() or {}
+    a_stats  = fa_stats.result()  or {}
+    b_stats  = fb_stats.result()  or {}
+    a_counters = fa_counters.result() or []  # heroes that play well vs A
+    b_counters = fb_counters.result() or []  # heroes that play well vs B
+
+    # Directional matchup detection:
+    # If B is in A's counters list with positive increase → B counters A.
+    # If A is in B's counters list with positive increase → A counters B.
+    def lookup_in(counter_list, target_id):
+        for c in counter_list:
+            if c.get("id") == target_id:
+                return c
+        return None
+
+    b_vs_a = lookup_in(a_counters, b["id"])  # how B does vs A
+    a_vs_b = lookup_in(b_counters, a["id"])  # how A does vs B
+
+    a_inc = (b_vs_a or {}).get("increase") or 0
+    b_inc = (a_vs_b or {}).get("increase") or 0
+    # If b_inc > 0 → A counters B. If a_inc > 0 → B counters A.
+    if (b_inc - a_inc) >= 0.02:
+        verdict = {"winner": a["name"], "loser": b["name"], "edge": pct(b_inc, 1)}
+    elif (a_inc - b_inc) >= 0.02:
+        verdict = {"winner": b["name"], "loser": a["name"], "edge": pct(a_inc, 1)}
+    else:
+        verdict = None  # too close to call
+
+    a_role  = primary_role(a_detail) if a_detail else (a.get("role") or "Fighter")
+    b_role  = primary_role(b_detail) if b_detail else (b.get("role") or "Fighter")
+    a_tier  = tier_from_winrate(a_stats.get("win_rate") or 0)
+    b_tier  = tier_from_winrate(b_stats.get("win_rate") or 0)
+    a_wr    = pct(a_stats.get("win_rate"))
+    b_wr    = pct(b_stats.get("win_rate"))
+    a_pr    = pct(a_stats.get("pick_rate"))
+    b_pr    = pct(b_stats.get("pick_rate"))
+    a_br    = pct(a_stats.get("ban_rate"))
+    b_br    = pct(b_stats.get("ban_rate"))
+
+    current_month = datetime.now(timezone.utc).strftime("%B %Y")
+
+    return render_template(
+        "vs.html",
+        a=a, b=b,
+        a_detail=a_detail, b_detail=b_detail,
+        a_role=a_role, b_role=b_role,
+        a_tier=a_tier, b_tier=b_tier,
+        a_wr=a_wr, b_wr=b_wr,
+        a_pr=a_pr, b_pr=b_pr,
+        a_br=a_br, b_br=b_br,
+        a_vs_b=a_vs_b,  # how A performs vs B (or None)
+        b_vs_a=b_vs_a,  # how B performs vs A (or None)
+        verdict=verdict,
+        current_month=current_month,
+        page_title=(
+            f"{a['name']} vs {b['name']} — MLBB Matchup Guide "
+            f"({current_month}) | {SITE_NAME}"
+        ),
+        page_desc=(
+            f"{a['name']} vs {b['name']} in MLBB ({current_month}). "
+            + (f"{verdict['winner']} has the edge "
+               f"({verdict['edge']} matchup advantage). "
+               if verdict else
+               f"Statistically balanced matchup. ")
+            + f"Live head-to-head data, who counters whom, "
+              f"role and tier comparison. Pulled from real ranked matches."
+        ),
+        page_keywords=(
+            f"{a['name']} vs {b['name']}, "
+            f"{b['name']} vs {a['name']}, "
+            f"{a['name']} or {b['name']} mlbb, "
+            f"{a['name']} {b['name']} matchup, "
+            f"who wins {a['name']} {b['name']}, "
+            f"is {a['name']} better than {b['name']}, "
+            f"mlbb matchup guide"
+        ),
+        canonical=f"/vs/{slug_a}/{slug_b}",
         hide_cta_band=True,
     )

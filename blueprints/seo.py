@@ -28,6 +28,7 @@ from config import config
 from lib.openmlbb import (
     cache_modified_iso,
     get_all_heroes,
+    get_tier_list,
     make_cache_key,
 )
 
@@ -46,6 +47,7 @@ def sitemap() -> Response:
     parts = ['<?xml version="1.0" encoding="UTF-8"?>',
              '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
     for name in ("sitemap-core.xml", "sitemap-heroes.xml", "sitemap-counters.xml",
+                 "sitemap-vs.xml",
                  "sitemap-roles.xml", "sitemap-lanes.xml", "sitemap-images.xml"):
         parts.append(
             f"<sitemap><loc>{base}/{name}</loc><lastmod>{lastmod}</lastmod></sitemap>"
@@ -147,6 +149,38 @@ def sitemap_counters() -> Response:
             f"<lastmod>{hero_lastmod}</lastmod>"
             f"<changefreq>daily</changefreq><priority>0.7</priority></url>"
         )
+    parts.append("</urlset>")
+    return Response("\n".join(parts), mimetype="application/xml")
+
+
+@bp.route("/sitemap-vs.xml")
+def sitemap_vs() -> Response:
+    """Hero-vs-hero matchup pages — top-20 × top-20 by pick rate.
+
+    The /vs/<a>/<b> route serves up to ~8.6k alpha-ordered hero pairs, but
+    we deliberately only advertise the popular subset (~190 pairs) to avoid
+    looking like a doorway-page farm. Less popular pairs are still indexable
+    via internal links and the canonical URL — we just don't ASK Google to
+    crawl them.
+    """
+    from app import dynamic_site_url
+    base = dynamic_site_url()
+    lastmod = datetime.now(timezone.utc).date().isoformat()
+    parts = ['<?xml version="1.0" encoding="UTF-8"?>',
+             '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+    try:
+        ranking = get_tier_list("all") or []
+    except Exception:
+        ranking = []
+    top = sorted(ranking, key=lambda h: (h.get("pick_rate") or 0), reverse=True)[:20]
+    slugs = sorted({h["slug"] for h in top if h.get("slug")})
+    for i, a_slug in enumerate(slugs):
+        for b_slug in slugs[i + 1:]:  # alpha-ordered, no self-pair, no duplicates
+            parts.append(
+                f"<url><loc>{base}/vs/{a_slug}/{b_slug}</loc>"
+                f"<lastmod>{lastmod}</lastmod>"
+                f"<changefreq>weekly</changefreq><priority>0.5</priority></url>"
+            )
     parts.append("</urlset>")
     return Response("\n".join(parts), mimetype="application/xml")
 
@@ -273,6 +307,7 @@ def robots() -> Response:
         f"Sitemap: {base}/sitemap-core.xml",
         f"Sitemap: {base}/sitemap-heroes.xml",
         f"Sitemap: {base}/sitemap-counters.xml",
+        f"Sitemap: {base}/sitemap-vs.xml",
         f"Sitemap: {base}/sitemap-roles.xml",
         f"Sitemap: {base}/sitemap-lanes.xml",
         f"Sitemap: {base}/sitemap-images.xml",

@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block schema %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "@id": "{{ SITE_URL }}{{ canonical }}#article",
+  "isPartOf": { "@id": "{{ SITE_URL }}/#website" },
+  "publisher": { "@id": "{{ SITE_URL }}/#organization" },
+  "author": { "@id": "{{ SITE_URL }}/#organization" },
+  "headline": "{{ a.name }} vs {{ b.name }} — MLBB Matchup Guide",
+  "description": {{ page_desc | tojson }},
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "{{ SITE_URL }}{{ canonical }}" },
+  "datePublished": "{{ TODAY_ISO }}",
+  "dateModified": "{{ TODAY_ISO }}",
+  "inLanguage": "{{ LANG_TAG }}",
+  "about": {
+    "@type": "VideoGame",
+    "name": "Mobile Legends: Bang Bang"
+  }
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "{{ SITE_URL }}/" },
+    { "@type": "ListItem", "position": 2, "name": "{{ a.name }}", "item": "{{ SITE_URL }}/hero/{{ a.slug }}" },
+    { "@type": "ListItem", "position": 3, "name": "vs {{ b.name }}", "item": "{{ SITE_URL }}{{ canonical }}" }
+  ]
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "inLanguage": "{{ LANG_TAG }}",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Who wins between {{ a.name }} and {{ b.name }} in MLBB?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "{% if verdict %}{{ verdict.winner }} has the statistical edge against {{ verdict.loser }} in the current MLBB meta — about a {{ verdict.edge }} matchup advantage based on real ranked match data.{% else %}{{ a.name }} and {{ b.name }} is a balanced matchup — neither hero has a clear statistical edge in the current data. Outcome depends more on player skill and team draft than on the matchup itself.{% endif %}"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Should I pick {{ a.name }} or {{ b.name }}?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "{{ a.name }} is a {{ a_role|lower }} ({{ a_tier }}-tier, {{ a_wr }} WR). {{ b.name }} is a {{ b_role|lower }} ({{ b_tier }}-tier, {{ b_wr }} WR). {% if a_role == b_role %}Both fill the same role, so pick whichever has the better tier rating in the current patch.{% else %}They fill different roles ({{ a_role }} vs {{ b_role }}), so the right pick depends on what your team needs in the draft.{% endif %}"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is {{ a.name }} a counter to {{ b.name }}?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "{% if a_vs_b and (a_vs_b.increase or 0) > 0.02 %}Yes — {{ a.name }} performs above average against {{ b.name }} ({{ pct(a_vs_b.win_rate, 1) }} win rate vs {{ b.name }}, {{ pct(a_vs_b.increase, 1) }} edge over baseline). Pick {{ a.name }} into {{ b.name }} drafts when you can.{% else %}No — {{ a.name }} doesn't statistically counter {{ b.name }} in the current meta. The matchup is roughly even or favours {{ b.name }}.{% endif %}"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is {{ b.name }} a counter to {{ a.name }}?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "{% if b_vs_a and (b_vs_a.increase or 0) > 0.02 %}Yes — {{ b.name }} performs above average against {{ a.name }} ({{ pct(b_vs_a.win_rate, 1) }} win rate vs {{ a.name }}, {{ pct(b_vs_a.increase, 1) }} edge). {{ b.name }} is a viable counter pick.{% else %}No — {{ b.name }} doesn't statistically counter {{ a.name }} in the current data.{% endif %}"
+      }
+    }
+  ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="{{ url_for('heroes.index') }}">Heroes</a>
+  <span class="sep">/</span>
+  <a href="{{ url_for('heroes.hero_page', slug=a.slug) }}">{{ a.name }}</a>
+  <span class="sep">/</span>
+  <span>vs {{ b.name }}</span>
+</nav>
+
+<section class="page-head vs-head">
+  <p class="vs-kicker">MLBB Matchup Guide · {{ current_month }}</p>
+  <h1>{{ a.name }} vs {{ b.name }}</h1>
+  {% if verdict %}
+    <p class="vs-verdict"><strong>{{ verdict.winner }}</strong> has the edge — about a <strong>{{ verdict.edge }}</strong> matchup advantage based on live ranked match data.</p>
+  {% else %}
+    <p class="vs-verdict vs-verdict-neutral">Balanced matchup — neither hero has a clear statistical edge in the current meta.</p>
+  {% endif %}
+</section>
+
+<section class="vs-section vs-cards">
+  <article class="vs-card">
+    <a href="{{ url_for('heroes.hero_page', slug=a.slug) }}" class="vs-portrait">
+      {% if a.head %}<img src="{{ a.head }}" alt="{{ a.name }} MLBB" width="120" height="120" fetchpriority="high" decoding="async">{% endif %}
+    </a>
+    <h2><a href="{{ url_for('heroes.hero_page', slug=a.slug) }}">{{ a.name }}</a></h2>
+    <p class="vs-card-role">{{ a_role }} · Tier {{ a_tier }}</p>
+    <dl class="vs-stats">
+      <div><dt>Win rate</dt><dd>{{ a_wr }}</dd></div>
+      <div><dt>Pick rate</dt><dd>{{ a_pr }}</dd></div>
+      <div><dt>Ban rate</dt><dd>{{ a_br }}</dd></div>
+      {% if a_detail.lanes %}<div><dt>Lanes</dt><dd>{{ a_detail.lanes|join(', ') }}</dd></div>{% endif %}
+      {% if a_detail.difficulty_label %}<div><dt>Difficulty</dt><dd>{{ a_detail.difficulty_label }}</dd></div>{% endif %}
+    </dl>
+  </article>
+
+  <div class="vs-divider" aria-hidden="true">VS</div>
+
+  <article class="vs-card">
+    <a href="{{ url_for('heroes.hero_page', slug=b.slug) }}" class="vs-portrait">
+      {% if b.head %}<img src="{{ b.head }}" alt="{{ b.name }} MLBB" width="120" height="120" fetchpriority="high" decoding="async">{% endif %}
+    </a>
+    <h2><a href="{{ url_for('heroes.hero_page', slug=b.slug) }}">{{ b.name }}</a></h2>
+    <p class="vs-card-role">{{ b_role }} · Tier {{ b_tier }}</p>
+    <dl class="vs-stats">
+      <div><dt>Win rate</dt><dd>{{ b_wr }}</dd></div>
+      <div><dt>Pick rate</dt><dd>{{ b_pr }}</dd></div>
+      <div><dt>Ban rate</dt><dd>{{ b_br }}</dd></div>
+      {% if b_detail.lanes %}<div><dt>Lanes</dt><dd>{{ b_detail.lanes|join(', ') }}</dd></div>{% endif %}
+      {% if b_detail.difficulty_label %}<div><dt>Difficulty</dt><dd>{{ b_detail.difficulty_label }}</dd></div>{% endif %}
+    </dl>
+  </article>
+</section>
+
+<section class="vs-section">
+  <h2>Head-to-Head Matchup</h2>
+  <div class="vs-h2h">
+    <div class="vs-h2h-row {% if a_vs_b and (a_vs_b.increase or 0) > 0.02 %}vs-h2h-strong{% endif %}">
+      <strong>{{ a.name }} vs {{ b.name }}</strong>
+      {% if a_vs_b %}
+        <span class="vs-h2h-stat">{{ pct(a_vs_b.win_rate, 1) }} WR <small>vs {{ b.name }}</small></span>
+        <span class="vs-h2h-edge {% if (a_vs_b.increase or 0) > 0 %}positive{% elif (a_vs_b.increase or 0) < 0 %}negative{% endif %}">
+          {% if (a_vs_b.increase or 0) >= 0 %}+{% endif %}{{ pct(a_vs_b.increase, 1) }} edge
+        </span>
+      {% else %}
+        <span class="vs-h2h-stat muted">No matchup data — too few games sampled</span>
+      {% endif %}
+    </div>
+    <div class="vs-h2h-row {% if b_vs_a and (b_vs_a.increase or 0) > 0.02 %}vs-h2h-strong{% endif %}">
+      <strong>{{ b.name }} vs {{ a.name }}</strong>
+      {% if b_vs_a %}
+        <span class="vs-h2h-stat">{{ pct(b_vs_a.win_rate, 1) }} WR <small>vs {{ a.name }}</small></span>
+        <span class="vs-h2h-edge {% if (b_vs_a.increase or 0) > 0 %}positive{% elif (b_vs_a.increase or 0) < 0 %}negative{% endif %}">
+          {% if (b_vs_a.increase or 0) >= 0 %}+{% endif %}{{ pct(b_vs_a.increase, 1) }} edge
+        </span>
+      {% else %}
+        <span class="vs-h2h-stat muted">No matchup data — too few games sampled</span>
+      {% endif %}
+    </div>
+  </div>
+  <p class="muted">
+    "Edge" is the win-rate boost over baseline when this hero is matched against the other.
+    Anything above +3% is a hard counter; +1% to +3% is a soft counter; below that is roughly
+    even and decided more by player skill than the matchup itself.
+  </p>
+</section>
+
+<section class="vs-section">
+  <h2>Which One Should You Pick?</h2>
+  {% if a_role == b_role %}
+    <p>
+      Both <strong>{{ a.name }}</strong> and <strong>{{ b.name }}</strong> fill the
+      <strong>{{ a_role }}</strong> role. {% if verdict %}{{ verdict.winner }} is performing
+      better in the current patch — pick them if both are available in your draft.{% else %}They're
+      roughly equivalent in the current meta — pick whichever you have more games on.{% endif %}
+    </p>
+  {% else %}
+    <p>
+      <strong>{{ a.name }}</strong> is a <strong>{{ a_role }}</strong>;
+      <strong>{{ b.name }}</strong> is a <strong>{{ b_role }}</strong>. They aren't really
+      direct alternatives — the right pick depends on what your team draft is missing,
+      not on which hero is better in a vacuum.
+    </p>
+  {% endif %}
+  <ul class="vs-pick-tips">
+    <li><strong>Higher tier:</strong> {% if a_tier == b_tier %}Tied — both at Tier {{ a_tier }}.{% else %}{% if a_tier in ['SS','S','A'] and b_tier not in ['SS','S','A'] %}{{ a.name }} ({{ a_tier }}) clearly above {{ b.name }} ({{ b_tier }}).{% elif b_tier in ['SS','S','A'] and a_tier not in ['SS','S','A'] %}{{ b.name }} ({{ b_tier }}) clearly above {{ a.name }} ({{ a_tier }}).{% else %}{{ a.name }} ({{ a_tier }}) vs {{ b.name }} ({{ b_tier }}).{% endif %}{% endif %}</li>
+    <li><strong>Higher win rate:</strong> {{ a.name }} ({{ a_wr }}) vs {{ b.name }} ({{ b_wr }}).</li>
+    <li><strong>Higher pick rate:</strong> {{ a.name }} ({{ a_pr }}) vs {{ b.name }} ({{ b_pr }}). High pick rate means more familiarity in matchmaking.</li>
+    <li><strong>Higher ban rate:</strong> {{ a.name }} ({{ a_br }}) vs {{ b.name }} ({{ b_br }}). High ban rate means the hero is more often unavailable.</li>
+  </ul>
+</section>
+
+<section class="vs-section vs-related">
+  <h2>Dive Deeper</h2>
+  <div class="related-grid">
+    <a class="related-card" href="{{ url_for('heroes.hero_page', slug=a.slug) }}">
+      <span class="related-kicker">{{ a.name }}</span>
+      <span class="related-title">Full {{ a.name }} guide</span>
+      <span class="related-desc">Best build, emblem, combos and counters for {{ a.name }}.</span>
+    </a>
+    <a class="related-card" href="{{ url_for('heroes.hero_page', slug=b.slug) }}">
+      <span class="related-kicker">{{ b.name }}</span>
+      <span class="related-title">Full {{ b.name }} guide</span>
+      <span class="related-desc">Best build, emblem, combos and counters for {{ b.name }}.</span>
+    </a>
+    <a class="related-card" href="{{ url_for('heroes.counter_page', slug=a.slug) }}">
+      <span class="related-kicker">Counter</span>
+      <span class="related-title">How to counter {{ a.name }}</span>
+      <span class="related-desc">Top counter picks and items against {{ a.name }} in the current meta.</span>
+    </a>
+    <a class="related-card" href="{{ url_for('heroes.counter_page', slug=b.slug) }}">
+      <span class="related-kicker">Counter</span>
+      <span class="related-title">How to counter {{ b.name }}</span>
+      <span class="related-desc">Top counter picks and items against {{ b.name }} in the current meta.</span>
+    </a>
+  </div>
+</section>
+{% endblock %}
