@@ -146,6 +146,13 @@ app.register_blueprint(heroes_bp)
 from blueprints.pages import bp as pages_bp
 app.register_blueprint(pages_bp)
 
+# ---- Portal blueprint ----------------------------------------------------- #
+# /register + /api/send-vc + /api/verify — MLBB account verification flow for
+# the SGS Telegram bot (@SGS_MLBOT). Reached via the bot's login_url button.
+# Replaces the standalone Flask service that used to run on port 8080.
+from blueprints.portal import bp as portal_bp
+app.register_blueprint(portal_bp)
+
 # ---- Response compression (brotli > gzip > deflate) ---------------------- #
 # Cuts HTML/CSS/JS/XML bytes 70-85% on the wire. Biggest single perf win.
 if _HAS_COMPRESS:

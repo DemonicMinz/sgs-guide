@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>SGS — MLBB Verification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a0f; --gold:#FFD700; --gold-2:#ffb800; --red:#ff4444;
+  --card:rgba(255,255,255,0.05); --card-border:rgba(255,215,0,0.3);
+  --input-bg:rgba(255,255,255,0.08); --input-border:rgba(255,215,0,0.4);
+  --text:#ffffff; --muted:rgba(255,255,255,0.55); --placeholder:rgba(255,255,255,0.4);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  background:var(--bg); color:var(--text); min-height:100vh;
+  -webkit-font-smoothing:antialiased; overflow-x:hidden; position:relative;
+}
+/* Grid pattern + radial glow background */
+body::before{
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background-image:
+    linear-gradient(rgba(255,215,0,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,215,0,0.04) 1px, transparent 1px);
+  background-size:40px 40px;
+  mask-image:radial-gradient(ellipse at 50% 30%, #000 30%, transparent 80%);
+  -webkit-mask-image:radial-gradient(ellipse at 50% 30%, #000 30%, transparent 80%);
+}
+body::after{
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:
+    radial-gradient(1000px 500px at 50% -10%, rgba(255,215,0,0.10), transparent 60%),
+    radial-gradient(600px 400px at 90% 100%, rgba(255,68,68,0.06), transparent 60%);
+}
+.wrap{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:24px 18px 48px;min-height:100vh;display:flex;flex-direction:column}
+
+/* Header */
+.header{text-align:center;margin-bottom:22px}
+.logo{
+  font-family:'Rajdhani',sans-serif;font-weight:700;font-size:48px;letter-spacing:6px;line-height:1;
+  background:linear-gradient(135deg,#FFD700 0%,#ffb800 50%,#FFD700 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 4px 24px rgba(255,215,0,0.35));
+}
+.brand{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:14px;letter-spacing:4px;color:var(--text);margin-top:8px}
+.tagline{font-family:'Rajdhani',sans-serif;font-weight:500;font-size:10px;letter-spacing:3px;color:var(--gold);opacity:.85;margin-top:6px}
+.divider{height:1px;width:120px;margin:14px auto 0;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+
+/* Card with animated gold glow */
+.card{
+  position:relative;
+  background:var(--card);
+  border:1px solid var(--card-border);
+  border-radius:16px;
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  padding:24px 20px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+  animation:fadeUp .45s cubic-bezier(.2,.8,.2,1), cardGlow 4s ease-in-out infinite;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes cardGlow{
+  0%,100%{box-shadow:0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,215,0,0.15), 0 0 28px rgba(255,215,0,0.08), inset 0 1px 0 rgba(255,255,255,0.05)}
+  50%{box-shadow:0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,215,0,0.35), 0 0 44px rgba(255,215,0,0.22), inset 0 1px 0 rgba(255,255,255,0.08)}
+}
+
+/* Hidden error alert */
+.alert{
+  display:none;
+  background:rgba(255,68,68,0.1); border:1px solid rgba(255,68,68,0.45);
+  color:var(--red); padding:14px; border-radius:10px; font-size:14px; text-align:center;
+}
+.alert.show{display:block}
+
+/* Step indicator — more prominent */
+.steps{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:22px}
+.dot{
+  width:38px;height:38px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+  font-family:'Rajdhani';font-weight:700;font-size:17px;
+  background:rgba(255,255,255,0.05);border:2px solid rgba(255,255,255,0.12);color:var(--muted);
+  transition:all .3s;
+}
+.dot.active{background:linear-gradient(135deg,var(--gold),var(--gold-2));color:#0a0a0f;border-color:var(--gold);box-shadow:0 0 20px rgba(255,215,0,0.6);transform:scale(1.08)}
+.dot.done{background:rgba(255,215,0,0.15);color:var(--gold);border-color:var(--gold)}
+.bar{height:3px;width:36px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;position:relative}
+.bar.done::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,var(--gold),var(--gold-2));animation:fillBar .4s ease}
+@keyframes fillBar{from{transform:scaleX(0);transform-origin:left}to{transform:scaleX(1)}}
+
+/* Step content */
+.step{display:none;animation:slideIn .35s cubic-bezier(.2,.8,.2,1)}
+.step.active{display:block}
+@keyframes slideIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+.icon{font-size:44px;text-align:center;margin-bottom:4px;filter:drop-shadow(0 4px 12px rgba(255,215,0,0.3))}
+.title{font-family:'Rajdhani';font-weight:700;font-size:22px;text-align:center;margin:6px 0 4px;letter-spacing:1px}
+.subtitle{font-size:13px;color:var(--muted);text-align:center;margin:0 0 18px;line-height:1.5}
+
+/* Inputs — more padding */
+.field{margin-bottom:16px}
+.field label{display:block;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;font-weight:600}
+.input{
+  width:100%;padding:18px 18px;font-size:16px;font-family:inherit;
+  background:var(--input-bg);color:var(--text);
+  border:1px solid var(--input-border);border-radius:8px;outline:none;
+  transition:border-color .2s, box-shadow .2s, background .2s;
+}
+.input::placeholder{color:var(--placeholder)}
+.input:focus{border-color:var(--gold);box-shadow:0 0 0 2px rgba(255,215,0,0.3);background:rgba(255,255,255,0.10)}
+.input.err{border-color:var(--red);animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+
+.vc-input{
+  text-align:center;font-family:'Rajdhani',monospace;font-size:30px;font-weight:700;
+  letter-spacing:14px;padding:22px 10px;
+}
+
+/* Button */
+.btn{
+  width:100%;padding:16px 18px;border:0;border-radius:8px;cursor:pointer;
+  font-family:'Rajdhani',sans-serif;font-weight:700;font-size:16px;letter-spacing:2px;text-transform:uppercase;
+  background:linear-gradient(135deg,var(--gold),var(--gold-2));color:#0a0a0f;
+  transition:filter .15s, transform .1s;
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;text-decoration:none;
+}
+.btn:hover{filter:brightness(1.1)}
+.btn:active{transform:scale(0.98)}
+.btn:disabled{opacity:.7;cursor:wait}
+.link{display:block;text-align:center;margin-top:12px;font-size:13px;color:var(--gold);cursor:pointer;text-decoration:none;background:none;border:0;font-family:inherit}
+.link:hover{text-decoration:underline}
+
+.spin{width:16px;height:16px;border:2px solid rgba(0,0,0,0.25);border-top-color:#0a0a0f;border-radius:50%;animation:rot .7s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+.msg{font-size:13px;margin-top:10px;min-height:16px;line-height:1.4}
+.msg.err{color:var(--red)}
+.msg.ok{color:#6bd98a}
+.hint{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.5}
+
+/* Loading overlay */
+.overlay{position:fixed;inset:0;background:rgba(10,10,15,0.85);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;z-index:50}
+.overlay.show{display:flex}
+.bigspin{width:44px;height:44px;border:3px solid rgba(255,215,0,0.2);border-top-color:var(--gold);border-radius:50%;animation:rot .8s linear infinite}
+.overlay p{font-family:'Rajdhani';font-weight:600;letter-spacing:2px;font-size:14px;color:var(--gold)}
+
+/* Success content (used when success step reached) */
+.check-wrap{display:flex;justify-content:center;margin:4px 0 8px}
+.check{width:80px;height:80px;border-radius:50%;background:rgba(107,217,138,0.15);border:2px solid #6bd98a;display:flex;align-items:center;justify-content:center;animation:pop .5s cubic-bezier(.2,1.6,.4,1)}
+.check svg{width:40px;height:40px;stroke:#6bd98a;stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:40;stroke-dashoffset:40;animation:draw .5s .2s forwards}
+@keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+@keyframes draw{to{stroke-dashoffset:0}}
+.gold-title{font-family:'Rajdhani';font-weight:700;font-size:24px;text-align:center;letter-spacing:3px;
+  background:linear-gradient(135deg,#FFD700,#ffb800,#FFD700);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  margin:8px 0 18px}
+
+.profile{
+  background:rgba(0,0,0,0.35);border:1px solid rgba(255,215,0,0.25);border-radius:12px;
+  padding:20px;text-align:center;margin-bottom:16px;
+}
+.ign{font-family:'Rajdhani';font-weight:700;font-size:26px;letter-spacing:1px;margin-bottom:12px;word-break:break-word}
+.rank-badge{
+  display:inline-block;padding:7px 18px;border-radius:999px;font-family:'Rajdhani';font-weight:700;
+  font-size:13px;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;
+  background:rgba(255,255,255,0.08);border:1px solid currentColor;
+}
+.meta{display:flex;justify-content:center;gap:20px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.meta b{color:var(--text);font-weight:600}
+
+.r-warrior{color:#808080}
+.r-elite{color:#4CAF50}
+.r-master{color:#2196F3}
+.r-grandmaster{color:#9C27B0}
+.r-epic{color:#FF9800}
+.r-legend{color:#F44336}
+.r-mythic{color:#FFD700}
+.r-honor{color:#FFD700;box-shadow:0 0 14px rgba(255,215,0,0.5)}
+.r-glory{color:#FFD700;box-shadow:0 0 24px rgba(255,215,0,0.8)}
+.r-immortal{color:#fff;border-color:transparent !important;
+  background:linear-gradient(90deg,#ff0080,#ff8c00,#ffd700,#00ff88,#00d4ff,#8b5cf6,#ff0080);
+  background-size:300% 100%;animation:rainbow 4s linear infinite}
+@keyframes rainbow{to{background-position:300% 0}}
+
+.confetti{position:fixed;top:-10px;width:8px;height:14px;pointer-events:none;z-index:60;border-radius:2px}
+
+footer{margin-top:auto;text-align:center;padding-top:22px;font-size:11px;letter-spacing:2px;color:rgba(255,255,255,0.35);font-family:'Rajdhani';font-weight:600}
+footer b{color:var(--gold);font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="logo">SGS</div>
+    <div class="brand">SINGAPORE GAMING SYNDICATE</div>
+    <div class="tagline">WHERE SINGAPORE'S BEST GAMERS OPERATE</div>
+    <div class="divider"></div>
+  </div>
+
+  <input type="hidden" id="tid" value="{{ tid|default('', true) }}">
+  <input type="hidden" id="srv-error" value="{{ error|default('', true) }}">
+
+  <div class="card">
+    <div class="alert" id="alert"></div>
+
+    <div class="steps" id="steps">
+      <div class="dot active" data-dot="1">1</div>
+      <div class="bar" data-bar="1"></div>
+      <div class="dot" data-dot="2">2</div>
+      <div class="bar" data-bar="2"></div>
+      <div class="dot" data-dot="3">3</div>
+    </div>
+
+    <section class="step active" data-step="1">
+      <div class="icon">🎮</div>
+      <h1 class="title">Link Your MLBB Account</h1>
+      <p class="subtitle">Find your IDs in-game: tap avatar → shown under your name.</p>
+      <div class="field">
+        <label for="role_id">Player ID</label>
+        <input id="role_id" class="input" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="e.g. 44576105" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="zone_id">Zone ID (Server)</label>
+        <input id="zone_id" class="input" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="e.g. 2070" autocomplete="off">
+      </div>
+      <button class="btn" id="btn-send">Send Verification Code</button>
+      <div class="msg" id="msg1"></div>
+      <p class="hint">Example: Player ID <b>44576105</b> · Zone <b>2070</b></p>
+    </section>
+
+    <section class="step" data-step="2">
+      <div class="icon">📬</div>
+      <h1 class="title">Check Your In-Game Mailbox</h1>
+      <p class="subtitle">Enter the 6-digit code sent to your MLBB mailbox</p>
+      <div class="field">
+        <input id="vc" class="input vc-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="8" placeholder="······" autocomplete="one-time-code">
+      </div>
+      <button class="btn" id="btn-verify">Verify &amp; Register</button>
+      <button type="button" class="link" id="btn-resend">Resend code</button>
+      <div class="msg" id="msg2"></div>
+    </section>
+
+    <section class="step" data-step="upstream">
+      <div class="icon">⚠️</div>
+      <h1 class="title">Servers Are Busy</h1>
+      <p class="subtitle" id="upstream-msg">MLBB verification servers are busy right now. Please wait a few minutes and try again.</p>
+      <button class="btn" id="btn-retry">Try Again</button>
+      <p class="hint">Your in-game mailbox code is still valid for a few minutes.</p>
+    </section>
+
+    <section class="step" data-step="3">
+      <div class="check-wrap">
+        <div class="check"><svg viewBox="0 0 24 24"><polyline points="4,12 10,18 20,6"/></svg></div>
+      </div>
+      <h1 class="gold-title">OPERATIVE REGISTERED</h1>
+      <div class="profile" id="profile"></div>
+      <a class="btn" id="btn-tg" href="https://t.me/SingaporeGamingSyndicate">Open Telegram</a>
+    </section>
+  </div>
+
+  <footer>Powered by <b>ML BOT</b> • SINGAPORE GAMING SYNDICATE</footer>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="bigspin"></div>
+  <p id="overlay-txt">Verifying your profile...</p>
+</div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  // If Jinja didn't render (file:// preview), treat as empty so the demo UI shows.
+  const JINJA_OPEN = '{' + '{';
+  const clean = v => (!v || v.indexOf(JINJA_OPEN) !== -1) ? '' : v;
+  const tid = clean($('tid').value) || 'preview';
+  const srvErr = clean($('srv-error').value);
+  const alertEl = $('alert');
+
+  // Show server-side error (or missing tid) via JS — no Jinja leakage.
+  if (srvErr) {
+    alertEl.textContent = srvErr;
+    alertEl.classList.add('show');
+    document.querySelectorAll('.step, .steps').forEach(el => el.style.display = 'none');
+    return;
+  }
+  if (!tid) {
+    alertEl.textContent = 'Missing Telegram ID. Please use the link from the bot.';
+    alertEl.classList.add('show');
+    document.querySelectorAll('.step, .steps').forEach(el => el.style.display = 'none');
+    return;
+  }
+
+  const overlay = $('overlay'), overlayTxt = $('overlay-txt');
+
+  const rankClass = r => ({
+    'Warrior':'r-warrior','Elite':'r-elite','Master':'r-master','Grandmaster':'r-grandmaster',
+    'Epic':'r-epic','Legend':'r-legend','Mythic':'r-mythic','Mythical Honor':'r-honor',
+    'Mythical Glory':'r-glory','Mythical Immortal':'r-immortal'
+  }[r] || 'r-mythic');
+
+  function setStep(n){
+    // n may be a number (1/2/3) or the string 'upstream'
+    document.querySelectorAll('.step').forEach(s => {
+      const v = s.dataset.step;
+      s.classList.toggle('active', v === String(n));
+    });
+    const isUpstream = n === 'upstream';
+    document.getElementById('steps').style.visibility = isUpstream ? 'hidden' : 'visible';
+    if (isUpstream) return;
+    document.querySelectorAll('[data-dot]').forEach(d => {
+      const i = +d.dataset.dot;
+      d.classList.toggle('active', i === n);
+      d.classList.toggle('done', i < n);
+      d.textContent = i < n ? '✓' : i;
+    });
+    document.querySelectorAll('[data-bar]').forEach(b => b.classList.toggle('done', +b.dataset.bar < n));
+  }
+
+  function handleUpstream(data){
+    const p = document.getElementById('upstream-msg');
+    if (p && data && data.error) p.textContent = data.error;
+    setStep('upstream');
+  }
+
+  document.getElementById('btn-retry').addEventListener('click', () => {
+    // Reset all inputs and messages, back to Step 1
+    ['role_id','zone_id','vc'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    ['msg1','msg2'].forEach(id => { const el = document.getElementById(id); if (el) { el.textContent=''; el.className='msg'; }});
+    setStep(1);
+    setTimeout(() => document.getElementById('role_id').focus(), 200);
+  });
+
+  const showOverlay = t => { overlayTxt.textContent = t || 'Verifying your profile...'; overlay.classList.add('show'); };
+  const hideOverlay = () => overlay.classList.remove('show');
+  const showMsg = (el,t,k) => { el.className = 'msg ' + (k||''); el.textContent = t||''; };
+  const flagErr = i => { i.classList.add('err'); setTimeout(()=>i.classList.remove('err'),450); };
+  const escapeHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  async function postJSON(url, body){
+    const r = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+    let d = {}; try { d = await r.json(); } catch(_){}
+    return {status:r.status, data:d};
+  }
+
+  async function sendVC(btn){
+    const role_id = $('role_id').value.trim();
+    const zone_id = $('zone_id').value.trim();
+    const msg = $('msg1');
+    if (!/^\d+$/.test(role_id)) { flagErr($('role_id')); showMsg(msg,'Enter a numeric Player ID.','err'); return false; }
+    if (!/^\d+$/.test(zone_id)) { flagErr($('zone_id')); showMsg(msg,'Enter a numeric Zone ID.','err'); return false; }
+    const old = btn.innerHTML;
+    btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Sending…';
+    const { data } = await postJSON('/api/send-vc', { tid, role_id, zone_id });
+    btn.disabled = false; btn.innerHTML = old;
+    if (!data.ok) {
+      if (data.upstream) { handleUpstream(data); return false; }
+      showMsg(msg, data.error || 'Failed to send code.', 'err'); return false;
+    }
+    showMsg(msg, '✓ Code sent to your in-game mailbox.', 'ok');
+    return true;
+  }
+
+  $('btn-send').addEventListener('click', async () => {
+    if (await sendVC($('btn-send'))) { setStep(2); setTimeout(()=>$('vc').focus(),300); }
+  });
+
+  $('btn-resend').addEventListener('click', async e => {
+    e.preventDefault();
+    const msg = $('msg2'); showMsg(msg, 'Resending…','');
+    const { data } = await postJSON('/api/send-vc', { tid, role_id:$('role_id').value.trim(), zone_id:$('zone_id').value.trim() });
+    if (!data.ok && data.upstream) { handleUpstream(data); return; }
+    showMsg(msg, data.ok ? '✓ Code resent.' : (data.error||'Failed.'), data.ok ? 'ok' : 'err');
+  });
+
+  $('btn-verify').addEventListener('click', async () => {
+    const role_id = $('role_id').value.trim();
+    const zone_id = $('zone_id').value.trim();
+    const vc = $('vc').value.trim();
+    const msg = $('msg2');
+    if (!vc) { flagErr($('vc')); showMsg(msg,'Enter the code from your mailbox.','err'); return; }
+    showOverlay('Verifying your profile...');
+    const { data } = await postJSON('/api/verify', { tid, role_id, zone_id, vc });
+    hideOverlay();
+    if (!data.ok) {
+      if (data.upstream) { handleUpstream(data); return; }
+      flagErr($('vc')); showMsg(msg, data.error||'Verification failed.','err'); return;
+    }
+    showMsg(msg,'','');
+    $('profile').innerHTML = `
+      <div class="ign">${escapeHtml(data.ign)}</div>
+      <div class="rank-badge ${rankClass(data.rank)}">${escapeHtml(data.rank)}</div>
+      <div class="meta">
+        <span>LVL <b>${data.level}</b></span>
+        <span>ID <b>${escapeHtml(data.mlbb_id)}</b></span>
+        <span>ZONE <b>${escapeHtml(data.zone_id)}</b></span>
+      </div>`;
+    setStep(3);
+    fireConfetti();
+  });
+
+  function fireConfetti(){
+    const colors = ['#FFD700','#ffb800','#ff4444','#6bd98a','#2196F3','#ff8c00'];
+    for (let i=0;i<90;i++){
+      const el = document.createElement('div');
+      el.className='confetti';
+      el.style.left = Math.random()*100+'vw';
+      el.style.background = colors[i%colors.length];
+      el.style.transform = `rotate(${Math.random()*360}deg)`;
+      document.body.appendChild(el);
+      const dur = 1800+Math.random()*1400;
+      const dx = (Math.random()-0.5)*240;
+      el.animate([
+        {transform:`translate(0,0) rotate(0)`,opacity:1},
+        {transform:`translate(${dx}px,110vh) rotate(${720+Math.random()*360}deg)`,opacity:.9}
+      ],{duration:dur,easing:'cubic-bezier(.2,.6,.4,1)'}).onfinish = () => el.remove();
+    }
+  }
+})();
+</script>
+</body>
+</html>
