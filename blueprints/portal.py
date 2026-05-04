@@ -329,6 +329,8 @@ def api_verify():
     # Notify ml_bot. We include the JWT so /profile, /update, /sendupdate can
     # call OpenMLBB on the user's behalf — the standalone portal omitted this,
     # which is why /sendupdate exists as a "re-verify to get stats" workaround.
+    # rank_level is forwarded so the bot can render "Mythic 14★" style displays
+    # without re-querying the API.
     try:
         with httpx.Client(timeout=10.0) as client:
             client.post(
@@ -337,6 +339,7 @@ def api_verify():
                     "telegram_id": int(tid),
                     "ign": ign,
                     "rank": rank,
+                    "rank_level": rank_level,
                     "level": level,
                     "mlbb_id": role_id,
                     "zone_id": zone_id,
